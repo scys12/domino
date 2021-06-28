@@ -22,30 +22,45 @@ def main():
     running = True
     board = Board(screen)
     is_card_drag = False
-
+    is_showing_hint_tile = False
     while running:
         clock.tick(FPS)
-
+        board.draw()
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 running = False
-            if ev.type == pygame.MOUSEBUTTONDOWN:
-                is_card_drag = True
+            if ev.type == pygame.MOUSEBUTTONDOWN and not is_card_drag:
                 position = pygame.mouse.get_pos()
                 last_row, last_col = get_row_and_column_from_mouse(position)
                 card = board.get_card(last_row, last_col)
+                if isinstance(card, Card) and not card.is_in_board:
+                    is_showing_hint_tile = True
+                    left_row, right_row, hint_col = board.get_hint_tile()
+                    is_card_drag = True
             if ev.type == pygame.MOUSEBUTTONUP:
                 is_card_drag = False
+                is_showing_hint_tile = False
                 position = pygame.mouse.get_pos()
                 row, col = get_row_and_column_from_mouse(position)
-                if isinstance(card, Card) and not card.is_in_board and board.is_in_board_limit(row, col):
-                    card.update_status_in_board()
+                if isinstance(card, Card) and not card.is_in_board \
+                        and board.is_in_board_limit(row, col) and not card.is_in_last_col():
+                    if (left_row == row and col == hint_col) or (right_row == row and col == hint_col):
+                        card.update_status_in_board()
+                        if left_row == row:
+                            pivot_card = board.get_card(left_row+1, hint_col)
+                        else:
+                            pivot_card = board.get_card(right_row-1, hint_col)
+                        card.rotate_card(screen, pivot_card, row, col)
+                    else:
+                        board.move(card, last_row, last_col)
             if ev.type == pygame.MOUSEMOTION and is_card_drag:
                 position = pygame.mouse.get_pos()
                 row, col = get_row_and_column_from_mouse(position)
-                if isinstance(card, Card):
+                existing_card = board.get_card(row, col)
+                if isinstance(card, Card) and not existing_card and board.is_in_board_limit(row, col):
                     board.move(card, row, col)
-        board.draw()
+        if is_showing_hint_tile:
+            board.draw_hint_tile(left_row, right_row, hint_col)
         pygame.display.update()
     pygame.quit()
 
