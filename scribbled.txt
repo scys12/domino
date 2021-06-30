@@ -3,3 +3,203 @@
 
 2. Server merandom kartu yang turun pertama
 3. Dari 10 kartu tersisa dibagi kepada 2 player secara random
+
+# declare a list
+import pickle
+mylist = []
+
+# assigning value to list
+mylist.append('This is string')
+mylist.append(5)
+mylist.append(('localhost', 5000))
+
+print(mylist)
+
+# pickle object
+p = pickle.dumps(mylist)
+print(p)
+
+# unpickle object
+u = pickle.loads(p)
+print(u)
+
+import marshal
+
+value = (
+  "this is a string",
+  [1, 2, 3, 4],
+  ("more tuples", 1.0, 2.3, 4.5),
+  "this is yet another string"
+)
+
+data = marshal.dumps(value)
+
+# intermediate format
+print(type(data), len(data))
+
+print("-" * 50)
+print(repr(data))
+print("-" * 50)
+
+print(marshal.loads(data))
+
+
+# Server.py
+
+import socket
+import selectors
+import threading
+import marshal
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+ip_address = "127.0.0.1"
+port = 8081
+server.bind((ip_address, port))
+server.listen(2)
+list_of_clients = []
+
+board = [
+    {'d': 0}, {'d': 0}, {'d': 0},
+    {'d': 0}, {'d': 0}, {'d': 0},
+    {'d': 0}, {'d': 0}, {'d': 0},
+]
+
+
+def clientthread(conn_list, addr):
+    while True:
+        try:
+            # conn_list (1, socket)
+            message = conn_list[1].recv(1024).decode()[:-1]
+            id_user = conn_list[0]
+            ingame = False
+            if message == "start":
+                ingame = True
+            choice = 0
+            while(ingame):
+                data = marshal.dumps(board)
+                if data:
+                    broadcast(data)
+                choice = conn_list[1].recv(1024).decode()[:-1]
+                choice = int(choice)
+                board[choice-1]['d'] = id_user
+                pemenang = checkWinner()
+                print(marshal.loads(data))
+                print(pemenang)
+                print(id_user)
+                if pemenang != 0:
+                    ingame = False
+                    result = ''
+                    if id_user == pemenang:
+                        result = 'Kamu menang'
+                    else:
+                        result = 'Kamu kalah'
+                    sendMessage = "finish," + result
+                    broadcast(sendMessage.encode())
+            remove(conn_list)
+        except:
+            continue
+
+
+def checkWinner():
+    winner = 0
+    if board[0]['d'] == board[1]['d'] == board[2]['d'] and board[0] != 0:
+        winner = board[0]['d']
+    elif board[3]['d'] == board[4]['d'] == board[5]['d'] and board[3] != 0:
+        winner = board[3]['d']
+    elif board[6]['d'] == board[7]['d'] == board[8]['d'] and board[6] != 0:
+        winner = board[6]['d']
+    elif board[0]['d'] == board[3]['d'] == board[6]['d'] and board[0] != 0:
+        winner = board[0]['d']
+    elif board[1]['d'] == board[4]['d'] == board[7]['d'] and board[1] != 0:
+        winner = board[1]['d']
+    elif board[2]['d'] == board[5]['d'] == board[8]['d'] and board[2] != 0:
+        winner = board[2]['d']
+    elif board[0]['d'] == board[4]['d'] == board[8]['d'] and board[0] != 0:
+        winner = board[0]['d']
+    elif board[2]['d'] == board[4]['d'] == board[6]['d'] and board[2] != 0:
+        winner = board[2]['d']
+    return winner
+
+
+def broadcast(data):
+    for clients in list_of_clients:
+        #  bandingin id
+        clients[1].send(data)
+
+
+def remove(connection):
+    if connection in list_of_clients:
+        list_of_clients.remove(connection)
+
+
+id = 1
+while True:
+    conn, addr = server.accept()
+    conn_list = (id, conn)
+    list_of_clients.append(conn_list)
+    print(str(conn) + "\n" + "ID: " + str(id) + "\n")
+    id += 1
+    threading.Thread(target=clientthread, args=(conn_list, addr)).start()
+
+conn.close()
+
+
+
+
+
+# Client.py
+
+import socket
+import select
+import sys
+import marshal
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ip_address = '127.0.0.1'
+port = 8081
+server.connect((ip_address, port))
+
+while True:
+    sockets_list = [sys.stdin, server]
+    read_socket, write_socket, error_socket = select.select(
+        sockets_list, [], [])
+    for socks in read_socket:
+        if socks == server:
+            # jawaban user
+            # nerima papan
+
+            message = socks.recv(1024)
+            try:
+                data = marshal.loads(message)
+                for i in range(int(len(data)/3)):
+                    print('|', end='')
+                    if data[i*3 + 0]['d'] == 0:
+                        print(' ', end='')
+                    elif data[i*3 + 0]['d'] == 1:
+                        print('O', end='')
+                    elif data[i*3 + 0]['d'] == 2:
+                        print('X', end='')
+                    print('|', end='')
+                    if data[i*3 + 1]['d'] == 0:
+                        print(' ', end='')
+                    elif data[i*3 + 1]['d'] == 1:
+                        print('O', end='')
+                    elif data[i*3 + 1]['d'] == 2:
+                        print('X', end='')
+                    print('|', end='')
+                    if data[i*3 + 2]['d'] == 0:
+                        print(' ', end='')
+                    elif data[i*3 + 2]['d'] == 1:
+                        print('O', end='')
+                    elif data[i*2 + 2]['d'] == 2:
+                        print('X', end='')
+                    print('|')
+                    print()
+            except EOFError:
+                print(message.decode())
+        else:
+            message = sys.stdin.readline()
+            server.send(message.encode())
+            sys.stdout.flush()
+server.close()
