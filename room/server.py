@@ -5,14 +5,16 @@ import threading
 import pickle, base64
 from random import randint
 
+from RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
+
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-ip_address = 'localhost'
-port = 8081
+ip_address = IP_ADDRESS
+port = PORT
 server.bind((ip_address, port))
-server.listen(100)
+server.listen(MAX_LISTEN)
 waiting_room = []
 rooms = {}
 
@@ -22,10 +24,17 @@ def serialize(msg):
 def clientthread(conn, addr):
 	while True:
 		try:
-			msg = conn.recv(2048)
+			msg = conn.recv(MAX_RECV)
+			for r in rooms:
+				if conn in rooms[r]:
+					id_room = r
 			if msg:
-				print('Data recv : {}'.format(msg))
-				broadcast_waiting_room(msg)
+				if msg.decode() == 'Disconnect':
+					remove(conn)
+					broadcast_room("Pasangan Anda disconnect".encode(), rooms[id_room])
+				else:
+					print('Data recv : {}'.format(msg))
+					broadcast_room(msg, rooms[id_room])
 			else:
 				remove(conn)
 		except Exception as e:

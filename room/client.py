@@ -2,9 +2,11 @@ import socket
 import select
 import sys
 
+from RoomConstants import IP_ADDRESS, PORT, MAX_RECV
+
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ip_address = 'localhost'
-port = 8081
+ip_address = IP_ADDRESS
+port = PORT
 server.connect((ip_address, port))
 
 while True:
@@ -14,7 +16,7 @@ while True:
 
 		for socks in read_socket:
 			if socks == server:
-				msg = socks.recv(4096)
+				msg = socks.recv(MAX_RECV)
 				print(msg.decode())
 			else:
 				msg = sys.stdin.readLine()
