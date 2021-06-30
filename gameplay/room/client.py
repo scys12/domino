@@ -1,6 +1,7 @@
 import socket
 import select
 import sys
+import marshal
 
 from RoomConstants import IP_ADDRESS, PORT, MAX_RECV
 
@@ -17,7 +18,11 @@ while True:
 		for socks in read_socket:
 			if socks == server:
 				msg = socks.recv(MAX_RECV)
-				print(msg.decode())
+				try:
+						data = marshal.loads(msg)
+						print(data)
+				except EOFError:
+						print(msg.decode())				
 			else:
 				msg = sys.stdin.readline()
 				server.send(msg.encode())

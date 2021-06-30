@@ -1,4 +1,4 @@
-from gameplay.room.server import main
+from room.server import main
 
 if __name__ == "__main__":
   # board = Board()

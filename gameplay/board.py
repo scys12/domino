@@ -21,6 +21,14 @@ class Board:
         self.player1_cards = []
         self.player2_cards = []
         self.firstCard = None
+        self.current_turn = "player1"
+
+    def serialize_data(self):
+      return {
+        'first_card' : self.player1_cards,
+        'second_card' : self.player2_cards,
+        'current_turn' : self.current_turn,
+      }
   
     def generate_card(self, first_turn):
       """
@@ -29,7 +37,7 @@ class Board:
       """
       picked = []
       count = 0
-      picked_turn = "player1"
+      picked_turn = first_turn
 
       while True:
         if count == len(self.cards):
