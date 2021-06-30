@@ -1,5 +1,0 @@
-1. Kartu berjumlah 11
-[0,0], [0,1], [0,2], [0,3], [1,1], [1,2], [1,3], [2,1], [2,2], [2,3], [3,3]
-
-2. Server merandom kartu yang turun pertama
-3. Dari 10 kartu tersisa dibagi kepada 2 player secara random
