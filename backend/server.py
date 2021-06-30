@@ -1,14 +1,15 @@
-from board import Board
 import socket
 import select
 import sys
 import threading
-import pickle, base64
+import pickle
+import base64
 from random import randint
 from player import Player
+from board import Board
 import marshal
 
-from .RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
+from RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,6 +25,16 @@ rooms = {}
 
 def serialize(msg):
     return msg.encode()
+
+
+def create_message_dict(msg):
+    return {
+        'message': msg
+    }
+
+
+def serialize_marshal(data):
+    return marshal.dumps(data)
 
 
 def deserialize(msg):
@@ -110,7 +121,9 @@ def main():
         if len(waiting_room) == 1:
             for player in waiting_room:
                 player_instance.set_player_status("player1")
-                private(serialize("Silakan menunggu"), player)
+                print("kl")
+                message = create_message_dict("Silakan menunggu")
+                private(serialize_marshal(message), player)
         # Second player has been found
         elif len(waiting_room) == 2:
             player_instance.set_player_status("player2")
@@ -131,15 +144,15 @@ def main():
                 if player.status == "player1":
                     player.draw_card(board.player1_cards)
                 else:
-                  player.draw_card(board.player2_cards)
+                    player.draw_card(board.player2_cards)
 
                 message = f"Anda sudah terpasangkan. ID Room Anda adalah {id_room}"
                 start_game_state = {
-                    'message' : message,
-                    'player' : player.serialize_data(),
-                    'board' : board.serialize_data(),
+                    'message': message,
+                    'player': player.serialize_data(),
+                    'board': board.serialize_data(),
                 }
-                start_game_state_marshal = marshal.dumps(start_game_state)
+                start_game_state_marshal = serialize_marshal(start_game_state)
                 private(
                     start_game_state_marshal,
                     player
@@ -147,6 +160,7 @@ def main():
             waiting_room = []
             print(rooms)
         print(":".join([str(_) for _ in addr]) + " connected")
-        threading.Thread(target=clientthread, args=(player_instance, addr)).start()
+        threading.Thread(target=clientthread, args=(
+            player_instance, addr)).start()
 
     conn.close()
