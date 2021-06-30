@@ -8,7 +8,7 @@ from random import randint
 from player import Player
 import marshal
 
-from .RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
+from RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
