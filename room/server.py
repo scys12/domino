@@ -21,6 +21,9 @@ rooms = {}
 def serialize(msg):
 	return msg.encode()
 
+def deserialize(msg):
+	return msg.decode()
+
 def clientthread(conn, addr):
 	while True:
 		try:
@@ -29,11 +32,12 @@ def clientthread(conn, addr):
 				if conn in rooms[r]:
 					id_room = r
 			if msg:
+				# Untuk handling pesan-pesan yang diterima
 				if msg.decode() == 'Disconnect':
 					remove(conn)
-					broadcast_room("Pasangan Anda disconnect".encode(), rooms[id_room])
+					broadcast_room(serialize("Pasangan Anda disconnect"), rooms[id_room])
 				else:
-					print('Data recv : {}'.format(msg))
+					print('Data recv : {}'.format(deserialize(msg)))
 					broadcast_room(msg, rooms[id_room])
 			else:
 				remove(conn)
@@ -42,7 +46,6 @@ def clientthread(conn, addr):
 			continue
 
 def private(msg, dst):
-	# print(dst)
 	try:
 		dst.send(msg)
 	except Exception as e:
@@ -51,30 +54,28 @@ def private(msg, dst):
 		dst.close()
 
 def broadcast_waiting_room(msg):
-	print('Broadcasting ' + msg.decode())
+	print('Broadcasting ' + deserialize(msg))
 	for c in waiting_room:
-		if c:
-			print(c)
-			try:
-				c.send(msg)
-				print('Message sent to {}!'.format(str(c)))
-			except Exception as e:
-				print(e)
-				remove(c)
-				c.close()
+		print(c)
+		try:
+			c.send(msg)
+			print('Message sent to {}!'.format(str(c)))
+		except Exception as e:
+			print(e)
+			remove(c)
+			c.close()
 
 def broadcast_room(msg, room):
-	print('Broadcasting ' + msg.decode())
+	print('Broadcasting ' + deserialize(msg))
 	for c in room:
-		if c:
-			print(c)
-			try:
-				c.send(msg)
-				print('Message sent to {}!'.format(str(c)))
-			except Exception as e:
-				print(e)
-				remove(c)
-				c.close()
+		print(c)
+		try:
+			c.send(msg)
+			print('Message sent to {}!'.format(str(c)))
+		except Exception as e:
+			print(e)
+			remove(c)
+			c.close()
 
 def remove(conn):
 	for r in rooms:

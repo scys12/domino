@@ -19,9 +19,8 @@ while True:
 				msg = socks.recv(MAX_RECV)
 				print(msg.decode())
 			else:
-				msg = sys.stdin.readLine()
+				msg = sys.stdin.readline()
 				server.send(msg.encode())
-				print(msg)
 	except KeyboardInterrupt:
 		server.send('Disconnect'.encode())
 		server.close()
