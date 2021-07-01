@@ -4,11 +4,14 @@ from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE
 from gui.board import Board
 from gui.card import Card
 from network import NetworkThread
+from menu.mainmenu import Menu
 
 FPS = 60
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.init()
+screen = pygame.display.set_mode((640, 360))
 pygame.display.set_caption('Domino')
+main_menu = Menu(screen)
 
 
 def get_row_and_column_from_mouse(position):
@@ -18,7 +21,8 @@ def get_row_and_column_from_mouse(position):
     return row, col
 
 
-def start_windows():
+def start_game():
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     running = True
     board = Board(screen)
@@ -69,5 +73,4 @@ def start_windows():
 
 
 if __name__ == "__main__":
-
-    start_windows()
+    main_menu.menu.mainloop(main_menu.surface)
