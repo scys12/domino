@@ -1,4 +1,0 @@
-IP_ADDRESS = 'localhost'
-PORT = 8081
-MAX_LISTEN = 100
-MAX_RECV = 4096
