@@ -5,11 +5,11 @@ import threading
 import pickle
 import base64
 from random import randint
-from .player import Player
-from .board import Board
+from player import Player
+from board import Board
 import marshal
 
-from .RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
+from RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -165,3 +165,6 @@ def main():
             player_instance, addr)).start()
 
     conn.close()
+
+if __name__ == '__main__':
+	main()
