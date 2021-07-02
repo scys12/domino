@@ -1,10 +1,11 @@
+from menu.mainboard import MainBoard
 import pygame_menu
 from pygame_menu.examples import create_example_window
 from typing import Tuple, Any
-
+from network import NetworkThread
 
 class Menu:
-    def __init__(self, screen):
+    def __init__(self, screen, pygame):
         self.surface = screen
         self.theme = self.init_theme()
         self.user_name = None
@@ -18,6 +19,8 @@ class Menu:
         )
         self.menu.add.image(self.image, angle=0, scale=(0.15, 0.15))
         self.input_name()
+        self.pygame = pygame
+        self.mainboard = None
 
     def init_theme(self):
         mytheme = pygame_menu.themes.THEME_GREEN.copy()
@@ -32,6 +35,15 @@ class Menu:
         self.menu.add.button('Enter', self.display_main, button_id='quit')
 
     def start_the_game(self):
+        network = NetworkThread()
+        network.start()
+
+        print(network.status)
+        if(network.status == "Anda sudah terpasangkan"):
+            pygame_menu.events.EXIT
+            self.mainboard = MainBoard(network, self.pygame)
+            self.mainboard.start_game()
+
         print('{0}, Do the job here!'.format(self.user_name.get_value()))
         self.menu.remove_widget("Play")
         self.menu.remove_widget("quit")
