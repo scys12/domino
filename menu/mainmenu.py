@@ -3,6 +3,7 @@ import pygame_menu
 from pygame_menu.examples import create_example_window
 from typing import Tuple, Any
 from network import NetworkThread
+from time import sleep
 
 class Menu:
     def __init__(self, screen, pygame):
@@ -35,22 +36,30 @@ class Menu:
         self.menu.add.button('Enter', self.display_main, button_id='quit')
 
     def start_the_game(self):
+        print('Masuk sini!')
+        try:
+            self.menu.remove_widget("Play")
+            self.menu.remove_widget("quit")
+            self.menu.add.button("Return", self.display_main, button_id='Return')
+            self.menu.add.button('Quit', pygame_menu.events.EXIT)
+            self.menu.add.label(self.wait, max_char=40, font_size=20)
+        except Exception as e:
+            print(e)
         network = NetworkThread()
         network.start()
 
-        print(network.status)
-        if(network.status == "Anda sudah terpasangkan"):
-            pygame_menu.events.EXIT
-            self.mainboard = MainBoard(network, self.pygame)
-            self.mainboard.start_game()
-
         print('{0}, Do the job here!'.format(self.user_name.get_value()))
+        sleep(2)
+        print('Network Status skrg : ' + network.status)
         
-        self.menu.remove_widget("Play")
-        self.menu.remove_widget("quit")
-        self.menu.add.button("Return", self.display_main, button_id='Return')
-        self.menu.add.button('Quit', pygame_menu.events.EXIT)
-        self.menu.add.label(self.wait, max_char=40, font_size=20)
+        while True:
+            print("Status sekarang : " + network.status)
+            sleep(1)
+            if("Anda sudah" in network.status):
+                # print('masuk_sini!')
+                self.mainboard = MainBoard(network, self.pygame)
+                self.mainboard.start_game()
+                break
 
     def display_main(self):
         if len(self.user_name.get_value()) > 0:

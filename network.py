@@ -47,11 +47,12 @@ class NetworkThread(threading.Thread):
                             message = data['message']
                             print("pesan {}".format(message))
                             if(type(message) == str):
-                              print("is string")
-                              if(message.find("Anda sudah terpasangkan")):
-                                print("is connected")
-                                self.status = "Anda sudah terpasangkan"
-                            # print(data)
+                                print("is string")
+                                if(message.find("Anda sudah terpasangkan")):
+                                    print("is connected")
+                                self.status = message
+                            __import__('time').sleep(1)
+                            print('Status skrg:' + self.status)
                         except StopIteration:
                             print("cd")
                     else:
@@ -62,3 +63,4 @@ class NetworkThread(threading.Thread):
                 self.server.close()
                 sys.exit(0)
         self.server.close()
+
