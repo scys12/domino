@@ -33,6 +33,7 @@ class Menu:
 
     def start_the_game(self):
         print('{0}, Do the job here!'.format(self.user_name.get_value()))
+        
         self.menu.remove_widget("Play")
         self.menu.remove_widget("quit")
         self.menu.add.button("Return", self.display_main, button_id='Return')
