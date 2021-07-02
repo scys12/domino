@@ -1,5 +1,5 @@
 import pygame
-from constants import SQUARE_SIZE, FIRST_PLAYER, NEUTRAL_PLAYER
+from .constants import SQUARE_SIZE, FIRST_PLAYER, NEUTRAL_PLAYER
 
 
 class Card:

@@ -1,13 +1,17 @@
 import pygame
 from pygame.locals import *
-from constants import HEIGHT, WIDTH, SQUARE_SIZE
-from model.board import Board
-from model.card import Card
+from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE
+from gui.board import Board
+from gui.card import Card
+from network import NetworkThread
+from menu.mainmenu import Menu
 
 FPS = 60
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.init()
+screen = pygame.display.set_mode((640, 360))
 pygame.display.set_caption('Domino')
+main_menu = Menu(screen)
 
 
 def get_row_and_column_from_mouse(position):
@@ -17,12 +21,15 @@ def get_row_and_column_from_mouse(position):
     return row, col
 
 
-def main():
+def start_game():
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     running = True
     board = Board(screen)
     is_card_drag = False
     is_showing_hint_tile = False
+    network = NetworkThread()
+    network.start()
     while running:
         clock.tick(FPS)
         board.draw()
@@ -65,4 +72,5 @@ def main():
     pygame.quit()
 
 
-main()
+if __name__ == "__main__":
+    main_menu.menu.mainloop(main_menu.surface)
