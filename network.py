@@ -16,7 +16,7 @@ class NetworkThread(threading.Thread):
         self.addr = (self.ip_address, self.port)
         self.daemon = True  # exit with parent
         self.done = False
-        # self.start_network()
+        self.is_waiting = True
 
     def stop(self):
         self.done = True
@@ -27,7 +27,7 @@ class NetworkThread(threading.Thread):
             print("Connected to %s:%d" % (self.addr[0], self.addr[1]))
             return self.client.recv(2048).decode()
         except:
-            pass
+            print("Connection refused!")
 
     def run(self):
         self.connect()
@@ -42,6 +42,8 @@ class NetworkThread(threading.Thread):
                         msg = socks.recv(MAX_RECV)
                         try:
                             data = marshal.loads(msg)
+                            if 'is_waiting' in data:
+                                self.is_waiting = data['is_waiting']
                             print(data)
                         except StopIteration:
                             print("cd")

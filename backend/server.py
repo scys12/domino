@@ -121,8 +121,8 @@ def main():
         if len(waiting_room) == 1:
             for player in waiting_room:
                 player_instance.set_player_status("player1")
-                print("kl")
                 message = create_message_dict("Silakan menunggu")
+                message['is_waiting'] = True
                 private(serialize_marshal(message), player)
         # Second player has been found
         elif len(waiting_room) == 2:
@@ -151,7 +151,8 @@ def main():
                     'message': message,
                     'player': player.serialize_data(),
                     'board': board.serialize_data(),
-                    'state': 1
+                    'state': 1,
+                    'is_waiting': False
                 }
                 start_game_state_marshal = serialize_marshal(start_game_state)
                 private(
