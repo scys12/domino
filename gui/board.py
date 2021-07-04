@@ -4,7 +4,7 @@ from .card import Card
 
 
 class Board:
-    def __init__(self, screen):
+    def __init__(self, screen, total_enemy_card, board, player):
         self.board = []
         self.second_player_deck = dict()
         self.selected_piece = None
@@ -12,11 +12,11 @@ class Board:
         self.board_bg = pygame.image.load('assets/board.png')
         self.board_bg = pygame.transform.scale(self.board_bg, (1400, 750))
         self.screen = screen
-        self.create_board()
-        self.generate_second_player_cards()
+        self.create_board(board, player.cards)
+        self.generate_second_player_cards(total_enemy_card)
 
-    def generate_second_player_cards(self):
-        for i in range(2):
+    def generate_second_player_cards(self, total_enemy_card):
+        for i in range(total_enemy_card):
             self.second_player_deck[(
                 10+i, -1)] = Card(10 + i, -1, 0, 1, SECOND_PLAYER, False)
 
@@ -92,20 +92,24 @@ class Board:
             card = None
         return card
 
-    def create_board(self):
+    def create_board(self, board, first_player_cards):
         for row in range(ROWS):
             self.board.append([])
             for col in range(COLS):
-                if row == ROWS//2-1 and col == COLS//2-1:
+                # initialize middle card
+                if board[row][col] != 0:
+                    current_card = board[row][col]
                     self.board[row].append(
-                        Card(row, col, 0, 1, NEUTRAL_PLAYER, True))
+                        Card(row, col, current_card[0], current_card[1], NEUTRAL_PLAYER, True))
                 else:
                     self.board[row].append(0)
+            # initialize first player card
             if row >= 10 and row <= 10 + 2:
                 self.board[row].append(
-                    Card(row, 18, 0, 2, FIRST_PLAYER, False))
+                    Card(row, 18, first_player_cards[row - 10][0], first_player_cards[row - 10][1], FIRST_PLAYER, False))
             else:
                 self.board[row].append(0)
+        print(self.board)
 
     def draw(self):
         self.draw_squares()

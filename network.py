@@ -17,6 +17,7 @@ class NetworkThread(threading.Thread):
         self.daemon = True  # exit with parent
         self.done = False
         self.is_waiting = True
+        self.data = None
 
     def stop(self):
         self.done = True
@@ -44,7 +45,7 @@ class NetworkThread(threading.Thread):
                             data = marshal.loads(msg)
                             if 'is_waiting' in data:
                                 self.is_waiting = data['is_waiting']
-                            print(data)
+                            self.data = data
                         except StopIteration:
                             print("cd")
                     else:

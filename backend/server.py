@@ -138,7 +138,7 @@ def main():
               list card player 2 4 kartu
               card yang muncul pertama kali
             """
-
+            board.init_board()
             rooms[id_room] = (board, waiting_room)
             for player in waiting_room:
                 if player.status == "player1":
@@ -150,7 +150,7 @@ def main():
                 start_game_state = {
                     'message': message,
                     'player': player.serialize_data(),
-                    'board': board.serialize_data(),
+                    'board': board.serialize_data(player.status),
                     'state': 1,
                     'is_waiting': False
                 }

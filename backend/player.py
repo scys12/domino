@@ -21,7 +21,7 @@ class Player:
 
     def serialize_data(self):
         return {
-            'identifier': self.identifier,
+            'id': self.identifier,
             'cards': self.cards,
             'last_throwed': self.last_throwed,
             'status': self.status,

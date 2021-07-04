@@ -1,7 +1,6 @@
 from typing import Tuple, Any
 from pygame_menu.examples import create_example_window
 import pygame_menu
-from menu.mainmenu import Menu
 from network import NetworkThread
 from gui.card import Card
 from gui.board import Board
@@ -9,7 +8,7 @@ import pygame
 import sys
 from pygame.locals import *
 from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE, WHITE
-
+from gui.player import Player
 
 pygame.init()
 pygame.display.set_caption('Domino')
@@ -84,11 +83,19 @@ class Game:
         col = (y - 75) // SQUARE_SIZE
         return row, col
 
+    def init_game(self):
+        if 'state' in self.network.data and self.network.data['state'] == 1:
+            player_data = self.network.data['player']
+            player = Player(
+                player_data['id'], player_data['cards'], player_data['status'])
+            board_data = self.network.data['board']
+            return Board(self.surface, board_data['total_enemy_card'], board_data['board'], player)
+
     def play_game(self):
         self.surface = pygame.display.set_mode((WIDTH, HEIGHT))
         clock = pygame.time.Clock()
         running = True
-        board = Board(self.surface)
+        board = self.init_game()
         is_card_drag = False
         is_showing_hint_tile = False
         while running:
