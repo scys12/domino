@@ -18,6 +18,7 @@ class NetworkThread(threading.Thread):
         self.done = False
         self.is_waiting = True
         self.data = None
+        self.data_to_send = None
 
     def stop(self):
         self.done = True
@@ -46,13 +47,20 @@ class NetworkThread(threading.Thread):
                             if 'is_waiting' in data:
                                 self.is_waiting = data['is_waiting']
                             self.data = data
+                            self.data_to_send = None
                         except StopIteration:
                             print("cd")
                     else:
-                        msg = sys.stdin.readline()
+                      print("masuk sini")
+                      if self.data_to_send != None:
+                        msg = serialize_marshal(self.data_to_send)
                         self.server.send(msg.encode())
             except KeyboardInterrupt:
                 self.server.send('Disconnect'.encode())
                 self.server.close()
                 sys.exit(0)
         self.server.close()
+
+    def set_state(self, data):
+      print('masuk sini 2')
+      self.data_to_send = data

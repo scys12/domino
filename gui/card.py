@@ -82,3 +82,18 @@ class Card:
         self.row = row
         self.col = col
         self.calc_pos()
+
+    def serialize_data(self):
+        return {
+            'row': self.row,
+            'col': self.col,
+            'top': self.top,
+            'down': self.down,
+            'is_in_board': self.is_in_board,
+            'player': self.player,
+            'direction': self.direction,
+            'x': self.x,
+            'y': self.y,
+            'position': self.position,
+            'image': self.image
+        }

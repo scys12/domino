@@ -131,6 +131,11 @@ class Game:
                                 pivot_card = pivot_card_right
                             card.rotate_card(
                                 self.surface, pivot_card, row, col, position)
+                            
+                            self.network.set_state({
+                              'position': (row, col),
+                              'card': pivot_card.serialize_data()
+                            })
                         else:
                             board.move(card, last_row, last_col)
                 if ev.type == pygame.MOUSEMOTION and is_card_drag:
