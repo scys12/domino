@@ -41,24 +41,55 @@ def deserialize(msg):
     return msg.decode()
 
 
+def deserialize_marshal(data):
+    return marshal.loads(data)
+
+
 def clientthread(player, addr):
     id_room = None
     while True:
         try:
             msg = player.connect.recv(MAX_RECV)
+            marshaled_msg = deserialize_marshal(msg)
             for room_id in rooms:
-                if player in rooms[room_id]:
+                if player in rooms[room_id][1]:
                     id_room = room_id
-            if msg:
+            print(id_room)
+            if marshaled_msg:
                 # Untuk handling pesan-pesan yang diterima
-                if msg.decode() == "Disconnect":
+                if 'status' in marshaled_msg and marshaled_msg['status'] == 'disconnect':
                     remove(player)
                     broadcast_room(
                         serialize("Pasangan Anda disconnect"), rooms[id_room]
                     )
                 else:
-                    print("Data recv : {}".format(deserialize(msg)))
-                    broadcast_room(msg, rooms[id_room])
+                    # print("Data recv : {}".format("ab"))
+                    if 'status' in marshaled_msg and marshaled_msg['status'] == 'send_card':
+                        board_data = marshaled_msg['board']
+                        board, list_players = rooms[id_room]
+                        board.update_board(
+                            board_data['row'], board_data['col'], board_data['top'], board_data['down'])
+                        player.throw_card(
+                            board_data['top'], board_data['down'])
+
+                        game_state = {
+                            'board': board.serialize_data(player.status),
+                            'state': 2,
+                            'player': player.serialize_data(),
+                        }
+                        if list_players[0].identifier == player.identifier:
+                            rooms[id_room] = (board, [player, list_players[1]])
+                            enemy_player = list_players[1]
+                        else:
+                            rooms[id_room] = (board, [list_players[0], player])
+                            enemy_player = list_players[0]
+
+                        private(serialize_marshal(game_state), player)
+                        game_state['player'] = enemy_player.serialize_data()
+                        game_state['board'] = board.serialize_data(
+                            enemy_player.status)
+                        private(serialize_marshal(game_state), enemy_player)
+
             else:
                 remove(player)
         except Exception as e:
@@ -80,31 +111,29 @@ def broadcast_waiting_room(msg):
     for c in waiting_room:
         print(c)
         try:
-            c.send(msg)
+            c.connect.send(msg)
             print("Message sent to {}!".format(str(c)))
         except Exception as e:
             print(e)
             remove(c)
-            c.close()
+            c.connect.close()
 
 
 def broadcast_room(msg, room):
-    print("Broadcasting " + deserialize(msg))
-    for c in room:
-        print(c)
+    for c in room[1]:
         try:
-            c.send(msg)
+            c.connect.send(msg)
             print("Message sent to {}!".format(str(c)))
         except Exception as e:
             print(e)
             remove(c)
-            c.close()
+            c.connect.close()
 
 
 def remove(player):
     for room_id in rooms:
         if player in rooms[room_id]:
-            rooms[room_id].remove(player)
+            rooms[room_id][1].remove(player)
 
 
 def main():

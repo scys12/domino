@@ -17,6 +17,7 @@ class NetworkThread(threading.Thread):
         self.daemon = True  # exit with parent
         self.done = False
         self.is_waiting = True
+        self.is_sending = False
         self.data = None
 
     def stop(self):
@@ -45,10 +46,13 @@ class NetworkThread(threading.Thread):
                             data = marshal.loads(msg)
                             if 'is_waiting' in data:
                                 self.is_waiting = data['is_waiting']
+                            else:
+                                self.is_sending = True
                             self.data = data
                         except StopIteration:
                             print("cd")
                     else:
+                        print("abc")
                         msg = sys.stdin.readline()
                         self.server.send(msg.encode())
             except KeyboardInterrupt:
@@ -56,3 +60,13 @@ class NetworkThread(threading.Thread):
                 self.server.close()
                 sys.exit(0)
         self.server.close()
+
+    def send_card(self, status, sent_card, player_id):
+        self.is_sending = False
+        msg = {
+            'status': status,
+            'board': sent_card,
+            'player_id': player_id
+        }
+        msg = marshal.dumps(msg)
+        self.server.send(msg)

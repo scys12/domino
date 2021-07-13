@@ -34,6 +34,7 @@ class Game:
         self.input_name()
         self.FPS = 60
         self.network = None
+        self.player = None
 
     def init_theme(self):
         mytheme = pygame_menu.themes.THEME_GREEN.copy()
@@ -86,10 +87,10 @@ class Game:
     def init_game(self):
         if 'state' in self.network.data and self.network.data['state'] == 1:
             player_data = self.network.data['player']
-            player = Player(
+            self.player = Player(
                 player_data['id'], player_data['cards'], player_data['status'])
             board_data = self.network.data['board']
-            return Board(self.surface, board_data['total_enemy_card'], board_data['board'], player)
+            return Board(self.surface, board_data['total_enemy_card'], board_data['board'], self.player)
 
     def play_game(self):
         self.surface = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -101,7 +102,18 @@ class Game:
         while running:
             self.surface.fill(WHITE)
             clock.tick(self.FPS)
+            if self.network.is_sending:
+                print(self.network.data)
+                player_data = self.network.data['player']
+                self.player = Player(
+                    player_data['id'], player_data['cards'], player_data['status'])
+                board_data = self.network.data['board']
+                board = Board(
+                    self.surface, board_data['total_enemy_card'], board_data['board'], self.player)
+                self.network.is_sending = False
+
             board.draw()
+
             position = pygame.mouse.get_pos()
             for ev in pygame.event.get():
                 if ev.type == pygame.QUIT:
@@ -114,6 +126,10 @@ class Game:
                     if isinstance(card, Card) and not card.is_in_board:
                         is_showing_hint_tile = True
                         left_row, right_row, hint_col, pivot_card_left, pivot_card_right = board.get_hint_tile()
+                        if not board.is_two_card_has_same_value(pivot_card_left, card):
+                            left_row = -1
+                        if not board.is_two_card_has_same_value(pivot_card_right, card):
+                            right_row = -1
                         is_card_drag = True
                 if ev.type == pygame.MOUSEBUTTONUP:
                     is_card_drag = False
@@ -131,6 +147,15 @@ class Game:
                                 pivot_card = pivot_card_right
                             card.rotate_card(
                                 self.surface, pivot_card, row, col, position)
+
+                            card_data = {
+                                'row': row,
+                                'col': col,
+                                'top': card.top,
+                                'down': card.down
+                            }
+                            self.network.send_card(
+                                'send_card', card_data, self.player.id)
                         else:
                             board.move(card, last_row, last_col)
                 if ev.type == pygame.MOUSEMOTION and is_card_drag:
@@ -139,7 +164,10 @@ class Game:
                     if isinstance(card, Card) and not existing_card and board.is_in_board_limit(row, col):
                         board.move(card, row, col)
             if is_showing_hint_tile:
-                board.draw_hint_tile(left_row, right_row, hint_col)
+                if left_row != -1:
+                    board.draw_hint_tile(left_row, hint_col)
+                if right_row != -1:
+                    board.draw_hint_tile(right_row, hint_col)
             pygame.display.update()
 
     def close_game(self):

@@ -27,6 +27,16 @@ class Board:
         self.current_turn = "player1"
         self.middle_card = self.cards.pop(random.randrange(len(self.cards)))
 
+    def update_board(self, row, col, top, down):
+        self.update_turn()
+        self.board[row][col] = (top, down)
+
+    def update_turn(self):
+        if self.current_turn == "player1":
+            self.current_turn = "player2"
+        else:
+            self.current_turn = "player1"
+
     def serialize_data(self, player_status):
         data = {
             'current_turn': self.current_turn,
@@ -76,3 +86,5 @@ class Board:
 
                 count = count + 1
                 picked.append(self.cards[i])
+        print(self.player1_cards)
+        print(self.player2_cards)
