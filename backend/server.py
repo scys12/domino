@@ -107,6 +107,8 @@ def clientthread(player, addr):
                         game_state['board'] = board.serialize_data(
                             enemy_player.status)
                         private(serialize_marshal(game_state), enemy_player)
+                    elif 'status' in marshaled_msg and marshaled_msg['status'] == 'send_msg':
+                        broadcast_room(marshaled_msg, rooms[id_room])
             else:
                 remove(player)
         except Exception as e:
@@ -213,5 +215,6 @@ def main():
 
     conn.close()
 
+
 if __name__ == '__main__':
-	main()
+    main()
