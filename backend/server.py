@@ -66,7 +66,7 @@ def clientthread(player, addr):
                     # print("Data recv : {}".format("ab"))
                     if 'status' in marshaled_msg and marshaled_msg['status'] == 'send_card':
                         card_data = marshaled_msg['card']
-                        board, list_players = rooms[id_room]
+                        board, list_players, chat_history = rooms[id_room]
                         board.update_board(card_data)
                         player.throw_card(card_data['top'], card_data['down'])
 
@@ -76,10 +76,12 @@ def clientthread(player, addr):
                             'player': player.serialize_data(),
                         }
                         if list_players[0].identifier == player.identifier:
-                            rooms[id_room] = (board, [player, list_players[1]])
+                            rooms[id_room] = (
+                                board, [player, list_players[1]], chat_history)
                             enemy_player = list_players[1]
                         else:
-                            rooms[id_room] = (board, [list_players[0], player])
+                            rooms[id_room] = (
+                                board, [list_players[0], player], chat_history)
                             enemy_player = list_players[0]
 
                         private(serialize_marshal(game_state), player)
@@ -88,7 +90,7 @@ def clientthread(player, addr):
                             enemy_player.status)
                         private(serialize_marshal(game_state), enemy_player)
                     elif 'status' in marshaled_msg and marshaled_msg['status'] == 'time_out':
-                        board, list_players = rooms[id_room]
+                        board, list_players, chat_history = rooms[id_room]
                         board.update_turn()
                         game_state = {
                             'board': board.serialize_data(player.status),
@@ -96,10 +98,12 @@ def clientthread(player, addr):
                             'player': player.serialize_data(),
                         }
                         if list_players[0].identifier == player.identifier:
-                            rooms[id_room] = (board, [player, list_players[1]])
+                            rooms[id_room] = (
+                                board, [player, list_players[1]], chat_history)
                             enemy_player = list_players[1]
                         else:
-                            rooms[id_room] = (board, [list_players[0], player])
+                            rooms[id_room] = (
+                                board, [list_players[0], player], chat_history)
                             enemy_player = list_players[0]
 
                         private(serialize_marshal(game_state), player)
@@ -108,7 +112,17 @@ def clientthread(player, addr):
                             enemy_player.status)
                         private(serialize_marshal(game_state), enemy_player)
                     elif 'status' in marshaled_msg and marshaled_msg['status'] == 'send_msg':
-                        broadcast_room(marshaled_msg, rooms[id_room])
+                        board, list_players, chat_history = rooms[id_room]
+                        
+                        chat_history.append((player.identifier, marshaled_msg['chat']))
+                        
+                        rooms[id_room] = (board, list_players, chat_history)
+                                
+                        game_state = {
+                          'state': 3,
+                          'messages': chat_history[-5:]
+                        }
+                        broadcast_room(serialize_marshal(game_state), rooms[id_room])
             else:
                 remove(player)
         except Exception as e:
@@ -187,7 +201,8 @@ def main():
               card yang muncul pertama kali
             """
             board.init_board()
-            rooms[id_room] = (board, waiting_room)
+            chat_history = []
+            rooms[id_room] = (board, waiting_room, chat_history)
             for player in waiting_room:
                 if player.status == "player1":
                     player.draw_card(board.player1_cards)
