@@ -14,7 +14,8 @@ pygame.init()
 pygame.display.set_caption('Domino')
 surface = pygame.display.set_mode((640, 360))
 pygame.font.init()
-myfont = pygame.font.SysFont('Comic Sans MS', 30)
+menu_font = pygame.font.SysFont(pygame_menu.font.FONT_BEBAS, 50)
+main_font = pygame.font.SysFont(pygame_menu.font.FONT_BEBAS, 40)
 
 
 class Game:
@@ -58,8 +59,7 @@ class Game:
             self.menu.add.label(self.wait, max_char=40, font_size=20)
             clock.tick(self.FPS)
             self.surface.fill((186, 214, 177))
-            myfont = pygame.font.SysFont(pygame_menu.font.FONT_BEBAS, 50)
-            textsurface = myfont.render(
+            textsurface = menu_font.render(
                 'Waiting for other player to join...', True, WHITE)
             self.surface.blit(textsurface, (640//2-250, 360//2))
             for ev in pygame.event.get():
@@ -90,84 +90,111 @@ class Game:
             self.player = Player(
                 player_data['id'], player_data['cards'], player_data['status'])
             board_data = self.network.data['board']
-            return Board(self.surface, board_data['total_enemy_card'], board_data['board'], self.player)
+            return Board(self.surface, board_data['total_enemy_card'], board_data['board'], self.player, board_data['current_turn'])
+
+    def render_time(self):
+        if self.board.current_turn == self.player.status and not self.network.is_waiting:
+            if not self.player.is_time_out():
+                self.player.update_time()
+                image = pygame.image.load('assets/timer.png')
+                image = pygame.transform.smoothscale(
+                    image.convert_alpha(), (50, 50))
+                if self.player.timer == 60:
+                    time_render = '01:00'
+                else:
+                    time_render = '00:' + str(self.player.timer).zfill(2)
+                textsurface = main_font.render(time_render, True, WHITE)
+                pygame.draw.rect(self.surface, WHITE,
+                                 pygame.Rect(1, 2, 130, 65),  3)
+                self.surface.blit(image, (0, 10))
+                self.surface.blit(textsurface, (50, 20))
+            else:
+                print("ok")
+                self.network.send_card('time_out', None)
 
     def play_game(self):
         self.surface = pygame.display.set_mode((WIDTH, HEIGHT))
         clock = pygame.time.Clock()
         running = True
-        board = self.init_game()
+        self.board = self.init_game()
         is_card_drag = False
         is_showing_hint_tile = False
         while running:
             self.surface.fill(WHITE)
             clock.tick(self.FPS)
-            if self.network.is_sending:
-                print(self.network.data)
+            if self.network.is_sending and not self.network.is_waiting:
                 player_data = self.network.data['player']
                 self.player = Player(
                     player_data['id'], player_data['cards'], player_data['status'])
                 board_data = self.network.data['board']
-                board = Board(
-                    self.surface, board_data['total_enemy_card'], board_data['board'], self.player)
+                self.board = Board(
+                    self.surface, board_data['total_enemy_card'], board_data['board'], self.player, board_data['current_turn'])
+                self.board.current_turn = board_data['current_turn']
                 self.network.is_sending = False
 
-            board.draw()
+            self.board.draw()
+
+            self.render_time()
 
             position = pygame.mouse.get_pos()
             for ev in pygame.event.get():
                 if ev.type == pygame.QUIT:
                     running = False
                     self.close_game()
-                if ev.type == pygame.MOUSEBUTTONDOWN and not is_card_drag:
+                if ev.type == pygame.MOUSEBUTTONDOWN and not is_card_drag and self.board.current_turn == self.player.status:
                     last_row, last_col = self.get_row_and_column_from_mouse(
                         position)
-                    card = board.get_card(last_row, last_col)
+                    card = self.board.get_card(last_row, last_col)
                     if isinstance(card, Card) and not card.is_in_board:
                         is_showing_hint_tile = True
-                        left_row, right_row, hint_col, pivot_card_left, pivot_card_right = board.get_hint_tile()
-                        if not board.is_two_card_has_same_value(pivot_card_left, card):
+                        left_row, right_row, hint_col, pivot_card_left, pivot_card_right = self.board.get_hint_tile()
+                        if not self.board.is_two_card_has_same_value(pivot_card_left, card):
                             left_row = -1
-                        if not board.is_two_card_has_same_value(pivot_card_right, card):
+                        if not self.board.is_two_card_has_same_value(pivot_card_right, card):
                             right_row = -1
+                        print(left_row, right_row, hint_col)
                         is_card_drag = True
-                if ev.type == pygame.MOUSEBUTTONUP:
+                if ev.type == pygame.MOUSEBUTTONUP and is_card_drag:
                     is_card_drag = False
                     is_showing_hint_tile = False
-                    row, col = self.get_row_and_column_from_mouse(position)
+                    dest_row, dest_col = self.get_row_and_column_from_mouse(
+                        position)
                     if isinstance(card, Card) and not card.is_in_board \
-                            and board.is_in_board_limit(row, col) and not card.is_in_last_col():
-                        if (left_row == row and col == hint_col) or (right_row == row and col == hint_col):
+                            and self.board.is_in_board_limit(dest_row, dest_col) and not card.is_in_last_col():
+                        print("JADI")
+                        if (left_row == dest_row and dest_col == hint_col) or (right_row == dest_row and dest_col == hint_col):
                             card.update_status_in_board()
-                            if left_row == row:
+                            print("LEFT")
+                            print(left_row, dest_row)
+                            print("COL")
+                            print(dest_col, hint_col)
+                            print("RIGHT")
+                            print(right_row, dest_row)
+                            if left_row == dest_row:
                                 position = "left"
                                 pivot_card = pivot_card_left
                             else:
                                 position = "right"
                                 pivot_card = pivot_card_right
-                            card.rotate_card(
-                                self.surface, pivot_card, row, col, position)
 
-                            card_data = {
-                                'row': row,
-                                'col': col,
-                                'top': card.top,
-                                'down': card.down
-                            }
+                            card.rotate_card(
+                                self.surface, pivot_card, dest_row, dest_col, position)
+
                             self.network.send_card(
-                                'send_card', card_data, self.player.id)
+                                'send_card', card.serialize_data())
                         else:
-                            board.move(card, last_row, last_col)
+                            print("GK JADI")
+                            self.board.move(card, last_row, last_col)
                 if ev.type == pygame.MOUSEMOTION and is_card_drag:
                     row, col = self.get_row_and_column_from_mouse(position)
-                    existing_card = board.get_card(row, col)
-                    if isinstance(card, Card) and not existing_card and board.is_in_board_limit(row, col):
-                        board.move(card, row, col)
+                    existing_card = self.board.get_card(row, col)
+                    if isinstance(card, Card) and not existing_card and self.board.is_in_board_limit(row, col):
+                        self.board.move(card, row, col)
             if is_showing_hint_tile:
                 if left_row != -1:
-                    board.draw_hint_tile(left_row, hint_col)
+                    self.board.draw_hint_tile(left_row, hint_col)
                 if right_row != -1:
-                    board.draw_hint_tile(right_row, hint_col)
+                    self.board.draw_hint_tile(right_row, hint_col)
             pygame.display.update()
 
     def close_game(self):

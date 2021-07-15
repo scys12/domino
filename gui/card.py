@@ -3,23 +3,27 @@ from .constants import SQUARE_SIZE, FIRST_PLAYER, NEUTRAL_PLAYER
 
 
 class Card:
-    def __init__(self, row, col, top, down, player, is_in_board):
+    def __init__(self, row, col, top, down, player, is_in_board, direction="top", position="middle"):
         self.row = row
         self.col = col
         self.top = top  # top always smaller than bottom
         self.down = down
         self.is_in_board = is_in_board
         self.player = player
-        self.direction = "top"
+        self.direction = direction
         self.x = 0
         self.y = 0
         self.calc_pos()
-        self.position = "middle"
+        self.position = position
         self.image = None
 
     def rotate_card(self, screen, pivot_card, row, col, position):
         self.position = position
-        if pivot_card.player == NEUTRAL_PLAYER:
+        # untuk kartu pivot yg tegak
+        print("pivot rotate card")
+        print(pivot_card.serialize_data())
+        if pivot_card.player == NEUTRAL_PLAYER or (pivot_card.direction == "top" and pivot_card.position != "middle"):
+            print("abcd")
             if position == "right":
                 if self.top == pivot_card.top or self.top == pivot_card.down:
                     self.direction = "left"
@@ -30,17 +34,30 @@ class Card:
                     self.direction = "right"
                 elif self.down == pivot_card.down or self.down == pivot_card.top:
                     self.direction = "left"
-        else:
-            if pivot_card.direction == "left":
-                if pivot_card.down == self.top:
-                    self.direction = "left"
-                elif pivot_card.down == self.down:
-                    self.direction = "right"
-            if pivot_card.direction == "right":
-                if pivot_card.down == self.top:
-                    self.direction = "right"
-                elif pivot_card.down == self.down:
-                    self.direction = "left"
+        elif self.top != self.down:  # untuk kartu pivotnya itu miring kiri / kanan
+            print("efgh")
+            if position == "left":
+                if pivot_card.direction == "left":
+                    if pivot_card.top == self.top:
+                        self.direction = "right"
+                    elif pivot_card.top == self.down:
+                        self.direction = "left"
+                elif pivot_card.direction == "right":
+                    if pivot_card.down == self.top:
+                        self.direction = "right"
+                    elif pivot_card.down == self.down:
+                        self.direction = "left"
+            elif position == "right":
+                if pivot_card.direction == "left":
+                    if pivot_card.down == self.top:
+                        self.direction = "left"
+                    elif pivot_card.down == self.down:
+                        self.direction = "right"
+                elif pivot_card.direction == "right":
+                    if pivot_card.top == self.top:
+                        self.direction = "left"
+                    elif pivot_card.top == self.down:
+                        self.direction = "right"
 
     def update_status_in_board(self):
         self.is_in_board = not self.is_in_board
@@ -54,7 +71,7 @@ class Card:
 
     def draw(self, screen):
         self.image = self.get_image()
-        if self.player == NEUTRAL_PLAYER:
+        if self.player == NEUTRAL_PLAYER or (self.direction == "top" and self.position != "middle"):
             screen.blit(self.image, (self.x, self.y-15))
         else:
             if self.position == "middle" or self.position == "right":
@@ -85,15 +102,11 @@ class Card:
 
     def serialize_data(self):
         return {
-            'row': self.row,
-            'col': self.col,
-            'top': self.top,
-            'down': self.down,
-            'is_in_board': self.is_in_board,
-            'player': self.player,
-            'direction': self.direction,
-            'x': self.x,
-            'y': self.y,
-            'position': self.position,
-            'image': self.image
+            "row": self.row,
+            "col": self.col,
+            "top": self.top,
+            "down": self.down,
+            "is_in_board": self.is_in_board,
+            "direction": self.direction,
+            "position": self.position,
         }

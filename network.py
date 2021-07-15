@@ -48,6 +48,7 @@ class NetworkThread(threading.Thread):
                             if 'is_waiting' in data:
                                 self.is_waiting = data['is_waiting']
                             else:
+                                self.is_waiting = False
                                 self.is_sending = True
                             self.data = data
                             self.data_to_send = None
@@ -63,12 +64,12 @@ class NetworkThread(threading.Thread):
                 sys.exit(0)
         self.server.close()
 
-    def send_card(self, status, sent_card, player_id):
+    def send_card(self, status, sent_card):
+        self.is_waiting = True
         self.is_sending = False
         msg = {
             'status': status,
-            'board': sent_card,
-            'player_id': player_id
+            'card': sent_card,
         }
         msg = marshal.dumps(msg)
         self.server.send(msg)
