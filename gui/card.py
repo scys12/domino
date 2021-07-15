@@ -3,24 +3,61 @@ from .constants import SQUARE_SIZE, FIRST_PLAYER, NEUTRAL_PLAYER
 
 
 class Card:
-    def __init__(self, row, col, top, down, player, is_in_board):
+    def __init__(self, row, col, top, down, player, is_in_board, direction="top", position="middle"):
         self.row = row
         self.col = col
         self.top = top  # top always smaller than bottom
         self.down = down
         self.is_in_board = is_in_board
         self.player = player
-        self.direction = "top"
+        self.direction = direction
         self.x = 0
         self.y = 0
         self.calc_pos()
+        self.position = position
+        self.image = None
 
-    def rotate_card(self, screen, pivot_card, row, col):
-        if pivot_card.player == NEUTRAL_PLAYER:
-            if self.top == pivot_card.top or self.top == pivot_card.down:
-                self.direction = "left"
-                image = pygame.image.load(
-                    'assets/' + str(self.top) + str(self.down) + '.png')
+    def rotate_card(self, screen, pivot_card, row, col, position):
+        self.position = position
+        # untuk kartu pivot yg tegak
+        print("pivot rotate card")
+        print(pivot_card.serialize_data())
+        if pivot_card.player == NEUTRAL_PLAYER or (pivot_card.direction == "top" and pivot_card.position != "middle"):
+            print("abcd")
+            if position == "right":
+                if self.top == pivot_card.top or self.top == pivot_card.down:
+                    self.direction = "left"
+                elif self.down == pivot_card.down or self.down == pivot_card.top:
+                    self.direction = "right"
+            elif position == "left":
+                if self.top == pivot_card.top or self.top == pivot_card.down:
+                    self.direction = "right"
+                elif self.down == pivot_card.down or self.down == pivot_card.top:
+                    self.direction = "left"
+        elif self.top != self.down:  # untuk kartu pivotnya itu miring kiri / kanan
+            print("efgh")
+            if position == "left":
+                if pivot_card.direction == "left":
+                    if pivot_card.top == self.top:
+                        self.direction = "right"
+                    elif pivot_card.top == self.down:
+                        self.direction = "left"
+                elif pivot_card.direction == "right":
+                    if pivot_card.down == self.top:
+                        self.direction = "right"
+                    elif pivot_card.down == self.down:
+                        self.direction = "left"
+            elif position == "right":
+                if pivot_card.direction == "left":
+                    if pivot_card.down == self.top:
+                        self.direction = "left"
+                    elif pivot_card.down == self.down:
+                        self.direction = "right"
+                elif pivot_card.direction == "right":
+                    if pivot_card.top == self.top:
+                        self.direction = "left"
+                    elif pivot_card.top == self.down:
+                        self.direction = "right"
 
     def update_status_in_board(self):
         self.is_in_board = not self.is_in_board
@@ -33,17 +70,25 @@ class Card:
         self.y = SQUARE_SIZE * self.col + 75
 
     def draw(self, screen):
-        image = self.get_image()
-        screen.blit(image, (self.x, self.y))
+        self.image = self.get_image()
+        if self.player == NEUTRAL_PLAYER or (self.direction == "top" and self.position != "middle"):
+            screen.blit(self.image, (self.x, self.y-15))
+        else:
+            if self.position == "middle" or self.position == "right":
+                screen.blit(self.image, (self.x, self.y))
+            elif self.position == "left":
+                screen.blit(self.image, (self.x-34, self.y))
 
     def get_image(self):
         if self.player != FIRST_PLAYER and self.player != NEUTRAL_PLAYER:
             image = pygame.image.load('assets/opponent.png')
-            image = pygame.transform.scale(image, (30, 10))
+            image = pygame.transform.smoothscale(
+                image.convert_alpha(), (30, 10))
         else:
             image = pygame.image.load(
                 'assets/' + str(self.top) + str(self.down) + '.png')
-            image = pygame.transform.scale(image, (30, 40))
+            image = pygame.transform.smoothscale(
+                image.convert_alpha(), (33, 67))
             if self.direction == "left":
                 image = pygame.transform.rotate(image, 90)
             if self.direction == "right":
@@ -54,3 +99,14 @@ class Card:
         self.row = row
         self.col = col
         self.calc_pos()
+
+    def serialize_data(self):
+        return {
+            "row": self.row,
+            "col": self.col,
+            "top": self.top,
+            "down": self.down,
+            "is_in_board": self.is_in_board,
+            "direction": self.direction,
+            "position": self.position,
+        }

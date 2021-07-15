@@ -16,8 +16,10 @@ class NetworkThread(threading.Thread):
         self.addr = (self.ip_address, self.port)
         self.daemon = True  # exit with parent
         self.done = False
-        self.status = ""
-        # self.start_network()
+        self.is_waiting = True
+        self.is_sending = False
+        self.data = None
+        self.data_to_send = None
 
     def stop(self):
         self.done = True
@@ -29,7 +31,7 @@ class NetworkThread(threading.Thread):
             print("Connected to %s:%d" % (self.addr[0], self.addr[1]))
             return self.client.recv(2048).decode()
         except:
-            pass
+            print("Connection refused!")
 
     def run(self):
         self.connect()
@@ -44,18 +46,17 @@ class NetworkThread(threading.Thread):
                         msg = socks.recv(MAX_RECV)
                         try:
                             data = marshal.loads(msg)
-                            message = data['message']
-                            print("pesan {}".format(message))
-                            if(type(message) == str):
-                                print("is string")
-                                if(message.find("Anda sudah terpasangkan")):
-                                    print("is connected")
-                                self.status = message
-                            __import__('time').sleep(1)
-                            print('Status skrg:' + self.status)
+                            if 'is_waiting' in data:
+                                self.is_waiting = data['is_waiting']
+                            else:
+                                self.is_waiting = False
+                                self.is_sending = True
+                            self.data = data
+                            self.data_to_send = None
                         except StopIteration:
                             print("cd")
                     else:
+                        print("abc")
                         msg = sys.stdin.readline()
                         self.server.send(msg.encode())
             except KeyboardInterrupt:
@@ -64,3 +65,12 @@ class NetworkThread(threading.Thread):
                 sys.exit(0)
         self.server.close()
 
+    def send_card(self, status, sent_card):
+        self.is_waiting = True
+        self.is_sending = False
+        msg = {
+            'status': status,
+            'card': sent_card,
+        }
+        msg = marshal.dumps(msg)
+        self.server.send(msg)

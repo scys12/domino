@@ -12,16 +12,17 @@ class Player:
     def draw_card(self, cards):
         self.cards = cards
 
-    def throw_card(self, cards_position):
-        self.last_throwed = self.cards[cards_position]
-        del self.cards[cards_position]
+    def throw_card(self, top, down):
+        print(self.cards)
+        print((top, down))
+        self.cards.remove((top, down))
 
     def set_player_status(self, status):
         self.status = status
 
     def serialize_data(self):
         return {
-            'identifier': self.identifier,
+            'id': self.identifier,
             'cards': self.cards,
             'last_throwed': self.last_throwed,
             'status': self.status,
