@@ -60,7 +60,9 @@ def clientthread(player, addr):
                 if 'status' in marshaled_msg and marshaled_msg['status'] == 'disconnect':
                     remove(player)
                     broadcast_room(
-                        serialize("Pasangan Anda disconnect"), rooms[id_room]
+                        serialize(
+                            {'msg' : "Pasangan Anda disconnect"}
+                        ), rooms[id_room]
                     )
                 else:
                     # print("Data recv : {}".format("ab"))
