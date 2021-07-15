@@ -1,4 +1,5 @@
 import random
+from backend.card import Card
 
 
 class Board:
@@ -27,9 +28,11 @@ class Board:
         self.current_turn = "player1"
         self.middle_card = self.cards.pop(random.randrange(len(self.cards)))
 
-    def update_board(self, row, col, top, down):
+    def update_board(self, card_data):
         self.update_turn()
-        self.board[row][col] = (top, down)
+        card = Card(card_data['row'], card_data['col'], card_data['top'], card_data['down'],
+                    card_data['is_in_board'], card_data['direction'], card_data['position'])
+        self.board[card_data['row']][card_data['col']] = card.serialize_data()
 
     def update_turn(self):
         if self.current_turn == "player1":
@@ -56,7 +59,9 @@ class Board:
             self.board.append([])
             for col in range(COLS):
                 if row == ROWS//2-1 and col == COLS//2-1:
-                    self.board[row].append(self.middle_card)
+                    card = Card(
+                        row, col, self.middle_card[0], self.middle_card[1], True, "top", "middle")
+                    self.board[row].append(card.serialize_data())
                 else:
                     self.board[row].append(0)
 
@@ -86,5 +91,3 @@ class Board:
 
                 count = count + 1
                 picked.append(self.cards[i])
-        print(self.player1_cards)
-        print(self.player2_cards)

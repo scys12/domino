@@ -4,10 +4,10 @@ from .card import Card
 
 
 class Board:
-    def __init__(self, screen, total_enemy_card, board, player):
+    def __init__(self, screen, total_enemy_card, board, player, current_turn):
         self.board = []
         self.second_player_deck = dict()
-        self.selected_piece = None
+        self.current_turn = current_turn
         self.black_left = self.white_left = 4
         self.board_bg = pygame.image.load('assets/board.png')
         self.board_bg = pygame.transform.scale(self.board_bg, (1400, 750))
@@ -74,8 +74,30 @@ class Board:
         return left_row, right_row, col, pivot_card_left, pivot_card_right
 
     def is_two_card_has_same_value(self, pivot_card, card):
-        return pivot_card.top == card.top or pivot_card.top == card.down \
-            or pivot_card.down == card.top or pivot_card.down == card.down
+        is_same = False
+        print(pivot_card.serialize_data())
+        if pivot_card.position == "left":
+            if pivot_card.direction == "left":
+                is_same = pivot_card.top == card.top or pivot_card.top == card.down
+            elif pivot_card.direction == "right":
+                is_same = pivot_card.down == card.top or pivot_card.down == card.down
+            elif pivot_card.direction == "top":
+                is_same = pivot_card.top == card.top or pivot_card.top == card.down \
+                    or pivot_card.down == card.top or pivot_card.down == card.down
+        elif pivot_card.position == "right":
+            if pivot_card.direction == "left":
+                is_same = (pivot_card.down ==
+                           card.top or pivot_card.down == card.down)
+            elif pivot_card.direction == "right":
+                is_same = pivot_card.top == card.top or pivot_card.top == card.down
+            elif pivot_card.direction == "top":
+                is_same = pivot_card.top == card.top or pivot_card.top == card.down \
+                    or pivot_card.down == card.top or pivot_card.down == card.down
+        elif pivot_card.position == "middle":
+            is_same = pivot_card.top == card.top or pivot_card.top == card.down \
+                or pivot_card.down == card.top or pivot_card.down == card.down
+        print(is_same)
+        return is_same
 
     def draw_hint_tile(self, row, col):
         pygame.draw.rect(self.screen, RED, ((row * SQUARE_SIZE) + 100,
@@ -100,8 +122,13 @@ class Board:
                 # initialize middle card
                 if board[row][col] != 0:
                     current_card = board[row][col]
+                    if row == ROWS//2-1 and col == COLS//2-1:
+                        player_status = NEUTRAL_PLAYER
+                    else:
+                        player_status = FIRST_PLAYER
+
                     self.board[row].append(
-                        Card(row, col, current_card[0], current_card[1], NEUTRAL_PLAYER, True))
+                        Card(row, col, current_card['top'], current_card['down'], player_status, current_card['is_in_board'], current_card['direction'], current_card['position']))
                 else:
                     self.board[row].append(0)
             # initialize first player card
