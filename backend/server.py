@@ -51,6 +51,7 @@ def clientthread(player, addr):
         try:
             msg = player.connect.recv(MAX_RECV)
             marshaled_msg = deserialize_marshal(msg)
+            print(marshaled_msg)
             for room_id in rooms:
                 if player in rooms[room_id][1]:
                     id_room = room_id
@@ -67,10 +68,10 @@ def clientthread(player, addr):
                 else:
                     # print("Data recv : {}".format("ab"))
                     if 'status' in marshaled_msg and marshaled_msg['status'] == 'send_card':
-                        board_data = marshaled_msg['board']
-                        board, list_players = rooms[id_room]
-                        board.update_board(
-                            board_data['row'], board_data['col'], board_data['top'], board_data['down'])
+                        board_data = marshaled_msg['card']
+                        print(rooms)
+                        board, list_players, chat_history = rooms[id_room]
+                        board.update_board(board_data)
                         player.throw_card(
                             board_data['top'], board_data['down'])
 
@@ -79,6 +80,8 @@ def clientthread(player, addr):
                             'state': 2,
                             'player': player.serialize_data(),
                         }
+
+
                         if list_players[0].identifier == player.identifier:
                             rooms[id_room] = (
                                 board, [player, list_players[1]], chat_history)

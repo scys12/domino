@@ -1,5 +1,5 @@
 import random
-from backend.card import Card
+from card import Card
 
 
 class Board:
