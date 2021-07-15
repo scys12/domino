@@ -63,7 +63,6 @@ def clientthread(player, addr):
                         serialize("Pasangan Anda disconnect"), rooms[id_room]
                     )
                 else:
-                    # print("Data recv : {}".format("ab"))
                     if 'status' in marshaled_msg and marshaled_msg['status'] == 'send_card':
                         card_data = marshaled_msg['card']
                         board, list_players = rooms[id_room]

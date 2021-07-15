@@ -62,12 +62,8 @@ class NetworkThread(threading.Thread):
                 sys.exit(0)
         self.server.close()
 
-    def send_card(self, status, sent_card):
+    def send_to_server(self, msg):
         self.is_waiting = True
         self.is_sending = False
-        msg = {
-            'status': status,
-            'card': sent_card,
-        }
         msg = marshal.dumps(msg)
         self.server.send(msg)
