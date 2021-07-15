@@ -171,6 +171,7 @@ class Game:
             pygame.display.update()
 
     def close_game(self):
+        self.network.send_disconnect()
         pygame_menu.events.EXIT
         pygame.quit()
         sys.exit(0)
