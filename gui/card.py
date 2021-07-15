@@ -17,7 +17,7 @@ class Card:
         self.position = position
         self.image = None
 
-    def rotate_card(self, screen, pivot_card, row, col, position):
+    def rotate_card(self, screen, pivot_card, position):
         self.position = position
         # untuk kartu pivot yg tegak
         print("pivot rotate card")

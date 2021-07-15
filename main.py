@@ -7,7 +7,7 @@ from gui.board import Board
 import pygame
 import sys
 from pygame.locals import *
-from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE, WHITE
+from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE, WHITE, BLACK, GRAY, DARK_GRAY, MORE_DARK_GRAY
 from gui.player import Player
 
 pygame.init()
@@ -16,6 +16,7 @@ surface = pygame.display.set_mode((640, 360))
 pygame.font.init()
 menu_font = pygame.font.SysFont(pygame_menu.font.FONT_BEBAS, 50)
 main_font = pygame.font.SysFont(pygame_menu.font.FONT_BEBAS, 40)
+chat_font = pygame.font.SysFont(pygame_menu.font.FONT_BEBAS, 25)
 
 
 class Game:
@@ -109,8 +110,11 @@ class Game:
                 self.surface.blit(image, (0, 10))
                 self.surface.blit(textsurface, (50, 20))
             else:
-                print("ok")
-                self.network.send_card('time_out', None)
+                msg = {
+                    'status': 'time_out',
+                    'card': None,
+                }
+                self.network.send_to_server(msg)
 
     def play_game(self):
         self.surface = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -119,41 +123,114 @@ class Game:
         self.board = self.init_game()
         is_card_drag = False
         is_showing_hint_tile = False
+
+        input_box = pygame.Rect(1125, 600, 365, 50)
+        # input_box = pygame.Rect(1100, 700, 180, 50)y nya pas
+        inactive_color_input_box = WHITE
+        active_color_input_box = BLACK
+        color_input_box = inactive_color_input_box
+        is_input_box_active = False
+
+        button = pygame.Rect(1275, 700, 100, 50)
+        is_button_active = False
+        active_color_button = MORE_DARK_GRAY
+        inactive_color_button = DARK_GRAY
+        color_button = inactive_color_button
+        text = ''
+
         while running:
             self.surface.fill(WHITE)
             clock.tick(self.FPS)
+
             if self.network.is_sending and not self.network.is_waiting:
-                player_data = self.network.data['player']
-                self.player = Player(
-                    player_data['id'], player_data['cards'], player_data['status'])
-                board_data = self.network.data['board']
-                self.board = Board(
-                    self.surface, board_data['total_enemy_card'], board_data['board'], self.player, board_data['current_turn'])
-                self.board.current_turn = board_data['current_turn']
-                self.network.is_sending = False
+                if 'state' in self.network.data and self.network.data['state'] == 2:
+                    player_data = self.network.data['player']
+                    self.player = Player(
+                        player_data['id'], player_data['cards'], player_data['status'])
+                    board_data = self.network.data['board']
+                    self.board = Board(
+                        self.surface, board_data['total_enemy_card'], board_data['board'], self.player, board_data['current_turn'])
+                    self.board.current_turn = board_data['current_turn']
+                    self.network.is_sending = False
+                elif 'state' in self.network.data and self.network.data['state'] == 3:
+                    messages = self.network.data['messages']
+                    print(messages)
 
             self.board.draw()
 
             self.render_time()
 
+            chat_bg = pygame.Rect(1122, 0, 370, 750)
+            pygame.draw.rect(self.surface, GRAY, chat_bg)
+
             position = pygame.mouse.get_pos()
+
+            inactive_bg = pygame.Rect(1125, 600, 365, 50)
+            pygame.draw.rect(self.surface, WHITE, inactive_bg)
+
+            if is_input_box_active:
+                pygame.draw.rect(self.surface, color_input_box, input_box, 2)
+            else:
+                pygame.draw.rect(self.surface, color_input_box, input_box)
+
+            txt_surface = chat_font.render(text, True, BLACK)
+            self.surface.blit(txt_surface, (input_box.x+5, input_box.y+5))
+
+            pygame.draw.rect(self.surface, color_button, button, 0, 10)
+            btn_text = chat_font.render("Kirim", True, WHITE)
+            self.surface.blit(btn_text, (button.x+30, button.y+17))
+
             for ev in pygame.event.get():
                 if ev.type == pygame.QUIT:
                     running = False
                     self.close_game()
-                if ev.type == pygame.MOUSEBUTTONDOWN and not is_card_drag and self.board.current_turn == self.player.status:
-                    last_row, last_col = self.get_row_and_column_from_mouse(
-                        position)
-                    card = self.board.get_card(last_row, last_col)
-                    if isinstance(card, Card) and not card.is_in_board:
-                        is_showing_hint_tile = True
-                        left_row, right_row, hint_col, pivot_card_left, pivot_card_right = self.board.get_hint_tile()
-                        if not self.board.is_two_card_has_same_value(pivot_card_left, card):
-                            left_row = -1
-                        if not self.board.is_two_card_has_same_value(pivot_card_right, card):
-                            right_row = -1
-                        print(left_row, right_row, hint_col)
-                        is_card_drag = True
+                if ev.type == pygame.MOUSEBUTTONDOWN:
+                    if not is_card_drag and self.board.current_turn == self.player.status:
+                        last_row, last_col = self.get_row_and_column_from_mouse(
+                            position)
+                        if self.board.is_in_board_limit(last_row, last_col):
+                            card = self.board.get_card(last_row, last_col)
+                            if isinstance(card, Card) and not card.is_in_board:
+                                is_showing_hint_tile = True
+                                left_row, right_row, hint_col, pivot_card_left, pivot_card_right = self.board.get_hint_tile()
+                                if not self.board.is_two_card_has_same_value(pivot_card_left, card):
+                                    left_row = -1
+                                if not self.board.is_two_card_has_same_value(pivot_card_right, card):
+                                    right_row = -1
+                                is_card_drag = True
+
+                    # handle chat
+                    if input_box.collidepoint(ev.pos):
+                        # Toggle the active variable.
+                        is_input_box_active = not is_input_box_active
+                    else:
+                        is_input_box_active = False
+
+                    if button.collidepoint(ev.pos) and len(text) > 0:
+                        #
+                        msg = {
+                            'status': 'send_msg',
+                            'chat': text
+                        }
+                        self.network.send_to_server(msg)
+                        text = ''
+                        # Toggle the active variable.
+                        is_button_active = not is_button_active
+                    else:
+                        is_button_active = False
+                    color_input_box = active_color_input_box if is_input_box_active else inactive_color_input_box
+                    color_button = active_color_button if is_button_active else inactive_color_button
+                if ev.type == pygame.KEYDOWN:
+                    if is_input_box_active:
+                        if ev.key == pygame.K_RETURN:
+                            pass
+                        elif ev.key == pygame.K_BACKSPACE:
+                            text = text[:-1]
+                        else:
+                            text_width = txt_surface.get_size()[0]
+                            if text_width < 337:
+                                text += ev.unicode
+
                 if ev.type == pygame.MOUSEBUTTONUP and is_card_drag:
                     is_card_drag = False
                     is_showing_hint_tile = False
@@ -161,16 +238,9 @@ class Game:
                         position)
                     if isinstance(card, Card) and not card.is_in_board \
                             and self.board.is_in_board_limit(dest_row, dest_col) and not card.is_in_last_col():
-                        print("JADI")
-                        if (left_row == dest_row and dest_col == hint_col) or (right_row == dest_row and dest_col == hint_col):
+                        if (left_row == card.row and card.col == hint_col) or (right_row == card.row and card.col == hint_col):
                             card.update_status_in_board()
-                            print("LEFT")
-                            print(left_row, dest_row)
-                            print("COL")
-                            print(dest_col, hint_col)
-                            print("RIGHT")
-                            print(right_row, dest_row)
-                            if left_row == dest_row:
+                            if left_row == card.row:
                                 position = "left"
                                 pivot_card = pivot_card_left
                             else:
@@ -178,18 +248,20 @@ class Game:
                                 pivot_card = pivot_card_right
 
                             card.rotate_card(
-                                self.surface, pivot_card, dest_row, dest_col, position)
-
-                            self.network.send_card(
-                                'send_card', card.serialize_data())
+                                self.surface, pivot_card, position)
+                            msg = {
+                                'status': 'send_card',
+                                'card': card.serialize_data(),
+                            }
+                            self.network.send_to_server(msg)
                         else:
-                            print("GK JADI")
                             self.board.move(card, last_row, last_col)
                 if ev.type == pygame.MOUSEMOTION and is_card_drag:
                     row, col = self.get_row_and_column_from_mouse(position)
                     existing_card = self.board.get_card(row, col)
                     if isinstance(card, Card) and not existing_card and self.board.is_in_board_limit(row, col):
                         self.board.move(card, row, col)
+
             if is_showing_hint_tile:
                 if left_row != -1:
                     self.board.draw_hint_tile(left_row, hint_col)
@@ -198,6 +270,7 @@ class Game:
             pygame.display.update()
 
     def close_game(self):
+        self.network.send_disconnect()
         pygame_menu.events.EXIT
         pygame.quit()
         sys.exit(0)

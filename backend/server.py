@@ -60,15 +60,19 @@ def clientthread(player, addr):
                 if 'status' in marshaled_msg and marshaled_msg['status'] == 'disconnect':
                     remove(player)
                     broadcast_room(
-                        serialize("Pasangan Anda disconnect"), rooms[id_room]
+                        serialize(
+                            {'msg' : "Pasangan Anda disconnect"}
+                        ), rooms[id_room]
                     )
                 else:
                     # print("Data recv : {}".format("ab"))
                     if 'status' in marshaled_msg and marshaled_msg['status'] == 'send_card':
-                        card_data = marshaled_msg['card']
-                        board, list_players, chat_history = rooms[id_room]
-                        board.update_board(card_data)
-                        player.throw_card(card_data['top'], card_data['down'])
+                        board_data = marshaled_msg['board']
+                        board, list_players = rooms[id_room]
+                        board.update_board(
+                            board_data['row'], board_data['col'], board_data['top'], board_data['down'])
+                        player.throw_card(
+                            board_data['top'], board_data['down'])
 
                         game_state = {
                             'board': board.serialize_data(player.status),
@@ -89,45 +93,11 @@ def clientthread(player, addr):
                         game_state['board'] = board.serialize_data(
                             enemy_player.status)
                         private(serialize_marshal(game_state), enemy_player)
-                    elif 'status' in marshaled_msg and marshaled_msg['status'] == 'time_out':
-                        board, list_players, chat_history = rooms[id_room]
-                        board.update_turn()
-                        game_state = {
-                            'board': board.serialize_data(player.status),
-                            'state': 2,
-                            'player': player.serialize_data(),
-                        }
-                        if list_players[0].identifier == player.identifier:
-                            rooms[id_room] = (
-                                board, [player, list_players[1]], chat_history)
-                            enemy_player = list_players[1]
-                        else:
-                            rooms[id_room] = (
-                                board, [list_players[0], player], chat_history)
-                            enemy_player = list_players[0]
-
-                        private(serialize_marshal(game_state), player)
-                        game_state['player'] = enemy_player.serialize_data()
-                        game_state['board'] = board.serialize_data(
-                            enemy_player.status)
-                        private(serialize_marshal(game_state), enemy_player)
-                    elif 'status' in marshaled_msg and marshaled_msg['status'] == 'send_msg':
-                        board, list_players, chat_history = rooms[id_room]
-                        
-                        chat_history.append((player.identifier, marshaled_msg['chat']))
-                        
-                        rooms[id_room] = (board, list_players, chat_history)
-                                
-                        game_state = {
-                          'state': 3,
-                          'messages': chat_history[-5:]
-                        }
-                        broadcast_room(serialize_marshal(game_state), rooms[id_room])
             else:
                 remove(player)
         except Exception as e:
             print(e)
-            continue
+            return
 
 
 def private(msg, player):

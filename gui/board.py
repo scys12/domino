@@ -75,7 +75,6 @@ class Board:
 
     def is_two_card_has_same_value(self, pivot_card, card):
         is_same = False
-        print(pivot_card.serialize_data())
         if pivot_card.position == "left":
             if pivot_card.direction == "left":
                 is_same = pivot_card.top == card.top or pivot_card.top == card.down
@@ -96,7 +95,6 @@ class Board:
         elif pivot_card.position == "middle":
             is_same = pivot_card.top == card.top or pivot_card.top == card.down \
                 or pivot_card.down == card.top or pivot_card.down == card.down
-        print(is_same)
         return is_same
 
     def draw_hint_tile(self, row, col):
