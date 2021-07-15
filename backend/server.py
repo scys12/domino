@@ -79,6 +79,7 @@ def clientthread(player, addr):
                             'board': board.serialize_data(player.status),
                             'state': 2,
                             'player': player.serialize_data(),
+                            'chat' : chat_history
                         }
 
 
@@ -96,6 +97,9 @@ def clientthread(player, addr):
                         game_state['board'] = board.serialize_data(
                             enemy_player.status)
                         private(serialize_marshal(game_state), enemy_player)
+                    elif 'status' in marshaled_msg and marshaled_msg['status'] == 'send_msg':
+                        
+                        return
             else:
                 remove(player)
         except Exception as e:

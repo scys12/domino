@@ -71,15 +71,6 @@ class NetworkThread(threading.Thread):
         msg = marshal.dumps(msg)
         self.server.send(msg)
 
-    def send_chat(self, status, pesan, player_id):
-        self.is_sending = False
-        msg = {
-            'msg': pesan,
-            'player_id': player_id
-        }
-        msg = marshal.dumps(msg)
-        self.server.send(msg)
-
     def send_disconnect(self):
         self.is_sending = False
         msg = {

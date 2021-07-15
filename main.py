@@ -210,7 +210,7 @@ class Game:
                         #
                         msg = {
                             'status': 'send_msg',
-                            'chat': text
+                            'chat': '[{}] {}'.format(self.user_name, text),
                         }
                         self.network.send_to_server(msg)
                         text = ''
