@@ -42,7 +42,6 @@ class Board:
         while idx_left >= 0:
             is_card_direction_top = pivot_card_left.direction == "top"
             card = self.board[idx_left][col]
-            nextCard = self.board[idx_left-1][col]
             if not isinstance(card, Card):
                 index = idx_left
                 if not is_card_direction_top:
@@ -74,12 +73,13 @@ class Board:
                     idx_right = idx_right + 2
         return left_row, right_row, col, pivot_card_left, pivot_card_right
 
-    def draw_hint_tile(self, left_row, right_row, col):
-        pygame.draw.rect(self.screen, RED, ((left_row * SQUARE_SIZE) + 100,
+    def is_two_card_has_same_value(self, pivot_card, card):
+        return pivot_card.top == card.top or pivot_card.top == card.down \
+            or pivot_card.down == card.top or pivot_card.down == card.down
+
+    def draw_hint_tile(self, row, col):
+        pygame.draw.rect(self.screen, RED, ((row * SQUARE_SIZE) + 100,
                                             (col * SQUARE_SIZE) + 75, SQUARE_SIZE, SQUARE_SIZE))
-        pygame.draw.rect(self.screen, RED, ((right_row * SQUARE_SIZE) + 100,
-                                            (col * SQUARE_SIZE) + 75, SQUARE_SIZE, SQUARE_SIZE))
-        pygame.display.flip()
 
     def move(self, card, dest_row, dest_col):
         self.board[card.row][card.col], self.board[dest_row][dest_col] = 0, self.board[card.row][card.col]
@@ -93,6 +93,7 @@ class Board:
         return card
 
     def create_board(self, board, first_player_cards):
+        self.board = []
         for row in range(ROWS):
             self.board.append([])
             for col in range(COLS):
@@ -104,12 +105,11 @@ class Board:
                 else:
                     self.board[row].append(0)
             # initialize first player card
-            if row >= 10 and row <= 10 + 2:
+            if row > 9 and row <= 9 + len(first_player_cards):
                 self.board[row].append(
                     Card(row, 18, first_player_cards[row - 10][0], first_player_cards[row - 10][1], FIRST_PLAYER, False))
             else:
                 self.board[row].append(0)
-        print(self.board)
 
     def draw(self):
         self.draw_squares()
