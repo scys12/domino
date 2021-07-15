@@ -5,11 +5,11 @@ import threading
 import pickle
 import base64
 from random import randint
-from player import Player
-from board import Board
+from .player import Player
+from .board import Board
 import marshal
 
-from RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
+from .RoomConstants import IP_ADDRESS, PORT, MAX_LISTEN, MAX_RECV
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -55,6 +55,7 @@ def clientthread(player, addr):
                 if player in rooms[room_id][1]:
                     id_room = room_id
             print(id_room)
+            print(marshaled_msg)
             if marshaled_msg:
                 # Untuk handling pesan-pesan yang diterima
                 if 'status' in marshaled_msg and marshaled_msg['status'] == 'disconnect':
@@ -112,16 +113,18 @@ def clientthread(player, addr):
                         private(serialize_marshal(game_state), enemy_player)
                     elif 'status' in marshaled_msg and marshaled_msg['status'] == 'send_msg':
                         board, list_players, chat_history = rooms[id_room]
-                        
-                        chat_history.append((player.identifier, marshaled_msg['chat']))
-                        
+
+                        chat_history.append(
+                            (player.identifier, marshaled_msg['chat']))
+
                         rooms[id_room] = (board, list_players, chat_history)
-                                
+
                         game_state = {
-                          'state': 3,
-                          'messages': chat_history[-5:]
+                            'state': 3,
+                            'messages': chat_history[-10:]
                         }
-                        broadcast_room(serialize_marshal(game_state), rooms[id_room])
+                        broadcast_room(serialize_marshal(
+                            game_state), rooms[id_room])
             else:
                 remove(player)
         except Exception as e:

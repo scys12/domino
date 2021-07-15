@@ -53,7 +53,6 @@ class NetworkThread(threading.Thread):
                         except StopIteration:
                             print("cd")
                     else:
-                        print("abc")
                         msg = sys.stdin.readline()
                         self.server.send(msg.encode())
             except KeyboardInterrupt:

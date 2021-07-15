@@ -7,7 +7,7 @@ from gui.board import Board
 import pygame
 import sys
 from pygame.locals import *
-from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE, WHITE, BLACK, GRAY, DARK_GRAY, MORE_DARK_GRAY
+from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE, WHITE, GREEN_CHAT, BLACK, GRAY, DARK_GRAY, MORE_DARK_GRAY
 from gui.player import Player
 
 pygame.init()
@@ -37,6 +37,7 @@ class Game:
         self.FPS = 60
         self.network = None
         self.player = None
+        self.messages = []
 
     def init_theme(self):
         mytheme = pygame_menu.themes.THEME_GREEN.copy()
@@ -116,6 +117,27 @@ class Game:
                 }
                 self.network.send_to_server(msg)
 
+    def render_chat(self):
+        if self.messages:
+            for idx, data in enumerate(self.messages):
+                player_id, chat = data
+                message_text = chat_font.render(chat, True, BLACK)
+                width, height = message_text.get_size()
+                if player_id == self.player.id:
+                    side = 200
+                    chat_color = GREEN_CHAT
+                    pos_x = 1535 - width - 40
+                else:
+                    side = 0
+                    chat_color = WHITE
+                    pos_x = 1125
+
+                chat_box = pygame.Rect(
+                    pos_x, 120 + 50 * idx, width + 30, height + 20)
+                pygame.draw.rect(self.surface, chat_color, chat_box, 0, 5)
+                self.surface.blit(
+                    message_text, (chat_box.x+15, chat_box.y+10))
+
     def play_game(self):
         self.surface = pygame.display.set_mode((WIDTH, HEIGHT))
         clock = pygame.time.Clock()
@@ -124,8 +146,7 @@ class Game:
         is_card_drag = False
         is_showing_hint_tile = False
 
-        input_box = pygame.Rect(1125, 600, 365, 50)
-        # input_box = pygame.Rect(1100, 700, 180, 50)y nya pas
+        input_box = pygame.Rect(1125, 640, 385, 50)
         inactive_color_input_box = WHITE
         active_color_input_box = BLACK
         color_input_box = inactive_color_input_box
@@ -141,31 +162,16 @@ class Game:
         while running:
             self.surface.fill(WHITE)
             clock.tick(self.FPS)
-
-            if self.network.is_sending and not self.network.is_waiting:
-                if 'state' in self.network.data and self.network.data['state'] == 2:
-                    player_data = self.network.data['player']
-                    self.player = Player(
-                        player_data['id'], player_data['cards'], player_data['status'])
-                    board_data = self.network.data['board']
-                    self.board = Board(
-                        self.surface, board_data['total_enemy_card'], board_data['board'], self.player, board_data['current_turn'])
-                    self.board.current_turn = board_data['current_turn']
-                    self.network.is_sending = False
-                elif 'state' in self.network.data and self.network.data['state'] == 3:
-                    messages = self.network.data['messages']
-                    print(messages)
-
             self.board.draw()
 
-            self.render_time()
-
-            chat_bg = pygame.Rect(1122, 0, 370, 750)
+            chat_bg = pygame.Rect(1122, 0, 420, 750)
             pygame.draw.rect(self.surface, GRAY, chat_bg)
+            chat_title = main_font.render("CHAT", True, MORE_DARK_GRAY)
+            self.surface.blit(chat_title, (chat_bg.x+180, chat_bg.y+70))
 
             position = pygame.mouse.get_pos()
 
-            inactive_bg = pygame.Rect(1125, 600, 365, 50)
+            inactive_bg = pygame.Rect(1125, 640, 385, 50)
             pygame.draw.rect(self.surface, WHITE, inactive_bg)
 
             if is_input_box_active:
@@ -179,6 +185,24 @@ class Game:
             pygame.draw.rect(self.surface, color_button, button, 0, 10)
             btn_text = chat_font.render("Kirim", True, WHITE)
             self.surface.blit(btn_text, (button.x+30, button.y+17))
+
+            if self.network.is_sending and not self.network.is_waiting:
+                if 'state' in self.network.data and self.network.data['state'] == 2:
+                    player_data = self.network.data['player']
+                    self.player = Player(
+                        player_data['id'], player_data['cards'], player_data['status'])
+                    board_data = self.network.data['board']
+                    self.board = Board(
+                        self.surface, board_data['total_enemy_card'], board_data['board'], self.player, board_data['current_turn'])
+                    self.board.current_turn = board_data['current_turn']
+                elif 'state' in self.network.data and self.network.data['state'] == 3:
+                    self.messages = self.network.data['messages']
+
+                self.network.is_sending = False
+
+            self.render_time()
+
+            self.render_chat()
 
             for ev in pygame.event.get():
                 if ev.type == pygame.QUIT:
@@ -222,14 +246,24 @@ class Game:
                     color_button = active_color_button if is_button_active else inactive_color_button
                 if ev.type == pygame.KEYDOWN:
                     if is_input_box_active:
-                        if ev.key == pygame.K_RETURN:
-                            pass
+                        if ev.key == pygame.K_RETURN and len(text) > 0:
+                            msg = {
+                                'status': 'send_msg',
+                                'chat': text
+                            }
+                            self.network.send_to_server(msg)
+                            text = ''
+                            # Toggle the active variable.
+                            is_button_active = not is_button_active
                         elif ev.key == pygame.K_BACKSPACE:
                             text = text[:-1]
                         else:
                             text_width = txt_surface.get_size()[0]
-                            if text_width < 337:
-                                text += ev.unicode
+                            if ev.key >= 32 and ev.key <= 126:
+                                if pygame.KMOD_SHIFT:
+                                    ev.key -= 32
+                                if text_width < 337:
+                                    text += ev.unicode
 
                 if ev.type == pygame.MOUSEBUTTONUP and is_card_drag:
                     is_card_drag = False
