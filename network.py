@@ -16,7 +16,9 @@ class NetworkThread(threading.Thread):
         self.addr = (self.ip_address, self.port)
         self.daemon = True  # exit with parent
         self.done = False
-        # self.start_network()
+        self.is_waiting = True
+        self.is_sending = False
+        self.data = None
 
     def stop(self):
         self.done = True
@@ -27,7 +29,7 @@ class NetworkThread(threading.Thread):
             print("Connected to %s:%d" % (self.addr[0], self.addr[1]))
             return self.client.recv(2048).decode()
         except:
-            pass
+            print("Connection refused!")
 
     def run(self):
         self.connect()
@@ -42,10 +44,15 @@ class NetworkThread(threading.Thread):
                         msg = socks.recv(MAX_RECV)
                         try:
                             data = marshal.loads(msg)
-                            print(data)
+                            if 'is_waiting' in data:
+                                self.is_waiting = data['is_waiting']
+                            else:
+                                self.is_sending = True
+                            self.data = data
                         except StopIteration:
                             print("cd")
                     else:
+                        print("abc")
                         msg = sys.stdin.readline()
                         self.server.send(msg.encode())
             except KeyboardInterrupt:
@@ -53,3 +60,13 @@ class NetworkThread(threading.Thread):
                 self.server.close()
                 sys.exit(0)
         self.server.close()
+
+    def send_card(self, status, sent_card, player_id):
+        self.is_sending = False
+        msg = {
+            'status': status,
+            'board': sent_card,
+            'player_id': player_id
+        }
+        msg = marshal.dumps(msg)
+        self.server.send(msg)

@@ -4,7 +4,7 @@ from .card import Card
 
 
 class Board:
-    def __init__(self, screen):
+    def __init__(self, screen, total_enemy_card, board, player):
         self.board = []
         self.second_player_deck = dict()
         self.selected_piece = None
@@ -12,16 +12,15 @@ class Board:
         self.board_bg = pygame.image.load('assets/board.png')
         self.board_bg = pygame.transform.scale(self.board_bg, (1400, 750))
         self.screen = screen
-        self.create_board()
-        self.generate_second_player_cards()
+        self.create_board(board, player.cards)
+        self.generate_second_player_cards(total_enemy_card)
 
-    def generate_second_player_cards(self):
-        for i in range(2):
+    def generate_second_player_cards(self, total_enemy_card):
+        for i in range(total_enemy_card):
             self.second_player_deck[(
                 10+i, -1)] = Card(10 + i, -1, 0, 1, SECOND_PLAYER, False)
 
     def draw_squares(self):
-        self.screen.fill(WHITE)
         self.screen.blit(self.board_bg, (0, 0))
         for row in range(ROWS):
             for col in range(row % 2, COLS, 2):
@@ -37,22 +36,49 @@ class Board:
     def get_hint_tile(self):
         row = ROWS//2-1
         col = COLS//2-1
-        for idx in range(row, -1, -1):
-            card = self.board[idx][col]
+        pivot_card_left = pivot_card_right = self.board[row][col]
+        # left
+        idx_left = idx_right = row
+        while idx_left >= 0:
+            is_card_direction_top = pivot_card_left.direction == "top"
+            card = self.board[idx_left][col]
             if not isinstance(card, Card):
-                left_row = idx
+                index = idx_left
+                if not is_card_direction_top:
+                    index = idx_left
+                left_row = index
                 break
-        for idx in range(row, ROWS):
-            card = self.board[idx][col]
-            if not isinstance(card, Card):
-                right_row = idx
-                break
-        return left_row, right_row, col
+            else:
+                pivot_card_left = self.board[idx_left][col]
+                if card.direction == "top":
+                    idx_left = idx_left - 1
+                else:
+                    idx_left = idx_left - 2
 
-    def draw_hint_tile(self, left_row, right_row, col):
-        pygame.draw.rect(self.screen, RED, ((left_row * SQUARE_SIZE) + 100,
-                                            (col * SQUARE_SIZE) + 75, SQUARE_SIZE, SQUARE_SIZE))
-        pygame.draw.rect(self.screen, RED, ((right_row * SQUARE_SIZE) + 100,
+        # right
+        while idx_right < ROWS:
+            is_card_direction_top = pivot_card_right.direction == "top"
+            card = self.board[idx_right][col]
+            if not isinstance(card, Card):
+                index = idx_right
+                if not is_card_direction_top:
+                    index = idx_right
+                right_row = index
+                break
+            else:
+                pivot_card_right = self.board[idx_right][col]
+                if card.direction == "top":
+                    idx_right = idx_right + 1
+                else:
+                    idx_right = idx_right + 2
+        return left_row, right_row, col, pivot_card_left, pivot_card_right
+
+    def is_two_card_has_same_value(self, pivot_card, card):
+        return pivot_card.top == card.top or pivot_card.top == card.down \
+            or pivot_card.down == card.top or pivot_card.down == card.down
+
+    def draw_hint_tile(self, row, col):
+        pygame.draw.rect(self.screen, RED, ((row * SQUARE_SIZE) + 100,
                                             (col * SQUARE_SIZE) + 75, SQUARE_SIZE, SQUARE_SIZE))
 
     def move(self, card, dest_row, dest_col):
@@ -66,18 +92,22 @@ class Board:
             card = None
         return card
 
-    def create_board(self):
+    def create_board(self, board, first_player_cards):
+        self.board = []
         for row in range(ROWS):
             self.board.append([])
             for col in range(COLS):
-                if row == ROWS//2-1 and col == COLS//2-1:
+                # initialize middle card
+                if board[row][col] != 0:
+                    current_card = board[row][col]
                     self.board[row].append(
-                        Card(row, col, 0, 1, NEUTRAL_PLAYER, True))
+                        Card(row, col, current_card[0], current_card[1], NEUTRAL_PLAYER, True))
                 else:
                     self.board[row].append(0)
-            if row >= 10 and row <= 10 + 2:
+            # initialize first player card
+            if row > 9 and row <= 9 + len(first_player_cards):
                 self.board[row].append(
-                    Card(row, 18, 0, 2, NEUTRAL_PLAYER, False))
+                    Card(row, 18, first_player_cards[row - 10][0], first_player_cards[row - 10][1], FIRST_PLAYER, False))
             else:
                 self.board[row].append(0)
 
