@@ -94,7 +94,7 @@ def clientthread(player, addr):
                 remove(player)
         except Exception as e:
             print(e)
-            continue
+            return
 
 
 def private(msg, player):
