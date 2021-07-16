@@ -20,10 +20,7 @@ class Card:
     def rotate_card(self, screen, pivot_card, position):
         self.position = position
         # untuk kartu pivot yg tegak
-        print("pivot rotate card")
-        print(pivot_card.serialize_data())
         if pivot_card.player == NEUTRAL_PLAYER or (pivot_card.direction == "top" and pivot_card.position != "middle"):
-            print("abcd")
             if position == "right":
                 if self.top == pivot_card.top or self.top == pivot_card.down:
                     self.direction = "left"
@@ -35,7 +32,6 @@ class Card:
                 elif self.down == pivot_card.down or self.down == pivot_card.top:
                     self.direction = "left"
         elif self.top != self.down:  # untuk kartu pivotnya itu miring kiri / kanan
-            print("efgh")
             if position == "left":
                 if pivot_card.direction == "left":
                     if pivot_card.top == self.top:

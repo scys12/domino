@@ -3,12 +3,12 @@ import time
 
 class Player():
     def __init__(self, id, cards, status):
-        self.time_limit = 60
+        self.time_limit = 30
         self.id = id
         self.cards = cards
         self.status = status
         self.start_time = time.time()
-        self.timer = 60
+        self.timer = 30
 
     def update_time(self):
         elapsed_time = time.time() - self.start_time

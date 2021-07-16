@@ -49,17 +49,24 @@ class NetworkThread(threading.Thread):
                             else:
                                 self.is_waiting = False
                                 self.is_sending = True
-                            self.data = data
+                            if 'state' in data and data['state'] > 0:
+                                self.data = data
                         except StopIteration:
-                            print("cd")
+                            pass
                     else:
                         msg = sys.stdin.readline()
                         self.server.send(msg.encode())
             except KeyboardInterrupt:
-                self.server.send('Disconnect'.encode())
-                self.server.close()
-                sys.exit(0)
+                print("abc")
+                self.disconnect()
         self.server.close()
+
+    def disconnect(self):
+        msg = {
+            'status': 'disconnect'
+        }
+        self.send_to_server(msg)
+        self.stop()
 
     def send_to_server(self, msg):
         self.is_waiting = True
