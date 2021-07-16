@@ -1,4 +1,5 @@
 from typing import Tuple, Any
+import os
 from pygame_menu.examples import create_example_window
 import pygame_menu
 from network import NetworkThread
@@ -10,6 +11,9 @@ from pygame.locals import *
 from gui.constants import HEIGHT, WIDTH, SQUARE_SIZE, WHITE, GREEN_CHAT, BLACK, GRAY, DARK_GRAY, MORE_DARK_GRAY, BROWN, RED
 from gui.player import Player
 
+pos_x = 300
+pos_y = 200
+os.environ['SDL_VIDEO_WINDOW_POS'] = '%i,%i' % (pos_x, pos_y)
 pygame.init()
 pygame.display.set_caption('Domino')
 surface = pygame.display.set_mode((640, 360))
