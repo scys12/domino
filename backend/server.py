@@ -71,6 +71,7 @@ def save_highscore(player, enemy_player):
                                       enemy_player.total_value, enemy_player.username)
     f = open("highscore.txt", "a+")
     highscore = f.write(text)
+    f.close()
 
 
 def clientthread(player, addr):

@@ -95,6 +95,7 @@ class Game:
         self.menu.add.label("High Score", max_char=70, font_size=40)
         self.menu.add.label(highscore, max_char=120, font_size=20)
         self.menu.add.button("Return", self.display_main, button_id="return 1")
+        f.close()
 
     def get_row_and_column_from_mouse(self, position):
         x, y = position
