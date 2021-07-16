@@ -49,12 +49,6 @@ def is_game_finished(pivot_card_left, pivot_card_right, list_players):
     is_game_finished = True
     for player in list_players:
         for card in player.cards:
-            print("LEFT")
-            print(pivot_card_left)
-            print("RIGHT")
-            print(pivot_card_right)
-            print("CARD")
-            print(card)
             if (pivot_card_left['direction'] == 'left' and pivot_card_left['top'] in card) \
                     or (pivot_card_left['direction'] == 'right' and pivot_card_left['down'] in card) \
                     or (pivot_card_right['direction'] == 'left' and pivot_card_right['down'] in card) \
@@ -81,7 +75,8 @@ def save_highscore(player, enemy_player):
 
 def clientthread(player, addr):
     id_room = None
-    while True:
+    running = True
+    while running:
         try:
             msg = player.connect.recv(MAX_RECV)
             marshaled_msg = deserialize_marshal(msg)
@@ -91,7 +86,6 @@ def clientthread(player, addr):
             if marshaled_msg:
                 # Untuk handling pesan-pesan yang diterima
                 if 'status' in marshaled_msg and marshaled_msg['status'] == 'disconnect':
-                    print("leave")
                     remove(player)
                     msg = {
                         'state': -1,
@@ -100,6 +94,7 @@ def clientthread(player, addr):
                     broadcast_room(
                         serialize_marshal(msg), rooms[id_room]
                     )
+                    running = False
                 else:
                     if 'status' in marshaled_msg and marshaled_msg['status'] == 'send_username':
                         board, list_players, chat_history = rooms[id_room]
@@ -309,9 +304,7 @@ def private(msg, player):
 
 
 def broadcast_waiting_room(msg):
-    print("Broadcasting " + deserialize(msg))
     for c in waiting_room:
-        print(c)
         try:
             c.connect.send(msg)
             print("Message sent to {}!".format(str(c)))
@@ -336,7 +329,6 @@ def remove(player):
     for room_id in rooms:
         if player in rooms[room_id][1]:
             rooms[room_id][1].remove(player)
-            print(rooms[room_id])
 
 
 def main():

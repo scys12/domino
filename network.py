@@ -57,7 +57,6 @@ class NetworkThread(threading.Thread):
                         msg = sys.stdin.readline()
                         self.server.send(msg.encode())
             except KeyboardInterrupt:
-                print("abc")
                 self.disconnect()
         self.server.close()
 
@@ -65,11 +64,14 @@ class NetworkThread(threading.Thread):
         msg = {
             'status': 'disconnect'
         }
-        self.send_to_server(msg)
         self.stop()
+        self.send_to_server(msg)
 
     def send_to_server(self, msg):
-        self.is_waiting = True
-        self.is_sending = False
-        msg = marshal.dumps(msg)
-        self.server.send(msg)
+        try:
+            self.is_waiting = True
+            self.is_sending = False
+            msg = marshal.dumps(msg)
+            self.server.send(msg)
+        except:
+            pass
